@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Bon de Commande</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Bon de Commande">
+<link rel="manifest" href="manifest.json">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+
+:root{
+  --nav:  #0D0D14;
+  --gold: #B8960C;
+  --bg:   #F4F3EF;
+  --card: #FFFFFF;
+  --text: #0D0D14;
+  --sub:  #6B6B6B;
+  --sep:  rgba(0,0,0,0.07);
+  --red:  #B91C1C;
+  --green:#15803D;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+  --nav-h:44px;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:  #0D0D14;
+    --card:#17171F;
+    --text:#F0EFE9;
+    --sub: #8A8A8A;
+    --sep: rgba(255,255,255,0.07);
+  }
+}
+
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',Arial,sans-serif;
+  background:var(--bg);color:var(--text);font-size:16px;
+}
+
+/* ── NAVIGATION ── */
+#navBar{
+  position:fixed;top:0;left:0;right:0;z-index:200;
+  height:calc(var(--nav-h) + var(--safe-top));
+  padding-top:var(--safe-top);
+  background:var(--nav);
+  display:flex;align-items:center;
+  padding-left:4px;padding-right:4px;
+  border-bottom:1px solid rgba(255,255,255,0.06);
+}
+#navLeft,#navRight{
+  min-width:80px;height:44px;border:none;
+  background:transparent;color:#C9A84C;
+  font-size:15px;cursor:pointer;
+  display:flex;align-items:center;
+  font-family:inherit;padding:0 10px;flex-shrink:0;
+}
+#navLeft{justify-content:flex-start;gap:4px}
+#navRight{justify-content:flex-end;font-weight:600}
+#navTitle{
+  flex:1;text-align:center;
+  font-size:16px;font-weight:700;
+  color:#FFFFFF;letter-spacing:0.5px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  text-transform:uppercase;
+}
+
+/* ── SCREENS ── */
+.screen{
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding-top:calc(var(--nav-h) + var(--safe-top) + 8px);
+  padding-bottom:calc(24px + var(--safe-bottom));
+  background:var(--bg);
+}
+.screen.hidden{display:none!important}
+.screen.behind{transform:translateX(-22%);opacity:0.45;pointer-events:none}
+
+/* ── LIST SCREEN ── */
+.list-hero{
+  padding:18px 18px 14px;
+  border-bottom:1px solid var(--sep);
+  margin-bottom:16px;
+}
+.list-hero-label{
+  font-size:11px;font-weight:600;
+  color:var(--gold);letter-spacing:1.5px;
+  text-transform:uppercase;margin-bottom:4px;
+}
+.list-hero-title{
+  font-size:28px;font-weight:800;
+  color:var(--text);letter-spacing:-0.5px;
+}
+.list-hero-sub{
+  font-size:13px;color:var(--sub);
+  margin-top:3px;
+}
+
+.section{margin:0 16px 20px}
+.section-hdr{
+  font-size:11px;font-weight:700;
+  color:var(--sub);letter-spacing:0.8px;
+  text-transform:uppercase;padding:0 2px 8px;
+}
+.card-list{
+  background:var(--card);border-radius:14px;
+  overflow:hidden;
+  box-shadow:0 1px 4px rgba(0,0,0,0.07),0 0 0 1px rgba(0,0,0,0.04);
+}
+
+.order-row{
+  display:flex;align-items:center;
+  padding:13px 14px;border-bottom:1px solid var(--sep);
+  cursor:pointer;-webkit-user-select:none;user-select:none;
+  transition:background 0.12s;
+}
+.order-row:last-child{border-bottom:none}
+.order-row:active{background:rgba(0,0,0,0.04)}
+
+.order-row-dot{
+  width:36px;height:36px;border-radius:10px;
+  background:var(--nav);
+  display:flex;align-items:center;justify-content:center;
+  margin-right:12px;flex-shrink:0;
+}
+.order-row-dot svg{width:20px;height:20px}
+
+.order-row-body{flex:1;min-width:0}
+.order-row-top{
+  display:flex;align-items:baseline;
+  justify-content:space-between;margin-bottom:2px;
+}
+.order-row-client{
+  font-size:15px;font-weight:600;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;
+}
+.order-row-date{
+  font-size:12px;color:var(--sub);
+  margin-left:8px;flex-shrink:0;
+}
+.order-row-dest{
+  font-size:13px;color:var(--sub);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.order-row-price{
+  font-size:12px;font-weight:600;
+  color:var(--green);margin-top:1px;
+}
+.order-row-chv{
+  color:rgba(0,0,0,0.2);font-size:16px;
+  margin-left:6px;flex-shrink:0;
+}
+@media(prefers-color-scheme:dark){
+  .order-row-chv{color:rgba(255,255,255,0.2)}
+}
+
+/* Empty state */
+.empty{text-align:center;padding:40px 28px 20px}
+.empty-svg{margin:0 auto 24px;max-width:260px;opacity:0.85}
+.empty-title{font-size:19px;font-weight:700;margin-bottom:7px}
+.empty-sub{font-size:14px;color:var(--sub);line-height:1.55}
+
+/* FAB */
+.fab{
+  position:fixed;right:20px;
+  bottom:calc(20px + var(--safe-bottom));
+  width:54px;height:54px;border-radius:27px;
+  background:var(--nav);
+  border:none;color:white;font-size:26px;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 20px rgba(0,0,0,0.3);
+  cursor:pointer;z-index:100;
+  transition:transform 0.1s,box-shadow 0.1s;
+}
+.fab:active{transform:scale(0.94);box-shadow:0 2px 10px rgba(0,0,0,0.2)}
+
+/* ── FORM SCREEN ── */
+.fsec{margin:0 16px 20px}
+.fsec-title{
+  font-size:11px;font-weight:700;
+  color:var(--sub);letter-spacing:0.8px;
+  text-transform:uppercase;padding:0 2px 8px;
+}
+.fcard{
+  background:var(--card);border-radius:14px;
+  overflow:hidden;
+  box-shadow:0 1px 4px rgba(0,0,0,0.07),0 0 0 1px rgba(0,0,0,0.04);
+}
+.frow{
+  display:flex;align-items:center;
+  padding:0 14px;min-height:46px;
+  border-bottom:1px solid var(--sep);
+}
+.frow:last-child{border-bottom:none}
+.frow.tall{align-items:flex-start;padding-top:11px;padding-bottom:11px}
+.flbl{font-size:15px;flex-shrink:0;padding-right:10px;color:var(--text)}
+.flbl.w1{width:128px}
+.flbl.w2{width:80px}
+.finp{
+  flex:1;font-size:15px;font-family:inherit;
+  border:none;outline:none;background:transparent;
+  color:var(--text);text-align:right;min-width:0;height:46px;
+}
+.finp::placeholder{color:var(--sub)}
+.finp.la{text-align:left}
+.farea{
+  flex:1;font-size:15px;font-family:inherit;
+  border:none;outline:none;background:transparent;
+  color:var(--text);resize:none;line-height:1.5;
+  padding-top:2px;width:100%;
+}
+.farea::placeholder{color:var(--sub)}
+.fsel{
+  flex:1;font-size:15px;font-family:inherit;
+  border:none;outline:none;background:transparent;
+  color:var(--text);text-align:right;
+  -webkit-appearance:none;appearance:none;
+  cursor:pointer;height:46px;
+  font-weight:500;
+}
+@media(prefers-color-scheme:dark){
+  .finp,.farea,.fsel{color-scheme:dark}
+  .fsel option{background:#17171F}
+}
+.stepper{display:flex;align-items:center;gap:10px;margin-left:auto}
+.stval{font-size:16px;font-weight:600;min-width:26px;text-align:center}
+.stbtn{
+  width:28px;height:28px;border-radius:14px;
+  border:none;background:var(--nav);color:white;
+  font-size:20px;line-height:1;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+}
+.stbtn:disabled{opacity:0.25}
+.stbtn:active{opacity:0.7}
+
+/* ── PREVIEW SCREEN ── */
+.pv-actions{display:flex;gap:10px;margin:4px 16px 14px}
+.pvbtn{
+  flex:1;height:46px;border-radius:12px;border:none;
+  font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.pvbtn:active{opacity:0.75}
+.pvbtn.share{background:var(--nav);color:white}
+.pvbtn.copy{background:var(--card);color:var(--text);
+  box-shadow:0 0 0 1px var(--sep)}
+.pvbtn.edit{background:var(--card);color:var(--sub);
+  box-shadow:0 0 0 1px var(--sep)}
+.pvbtn.del{background:rgba(185,28,28,0.08);color:var(--red)}
+
+.pv-card{
+  margin:0 16px 16px;
+  background:var(--card);border-radius:14px;
+  overflow:hidden;
+  box-shadow:0 1px 4px rgba(0,0,0,0.07),0 0 0 1px rgba(0,0,0,0.04);
+}
+.pv-card-top{
+  background:var(--nav);
+  padding:14px 16px 12px;
+}
+.pv-card-top-label{
+  font-size:10px;letter-spacing:1.5px;font-weight:600;
+  color:#C9A84C;text-transform:uppercase;margin-bottom:4px;
+}
+.pv-card-top-svc{
+  font-size:20px;font-weight:800;color:#FFFFFF;
+  letter-spacing:0.5px;
+}
+.pv-body{padding:14px 16px}
+.pv-row{margin-bottom:10px}
+.pv-row:last-child{margin-bottom:0}
+.pv-lbl{
+  font-size:10px;font-weight:700;color:var(--gold);
+  text-transform:uppercase;letter-spacing:0.8px;margin-bottom:2px;
+}
+.pv-val{font-size:14px;color:var(--text);line-height:1.4}
+.pv-hr{
+  border:none;border-top:1px solid var(--sep);margin:12px 0;
+}
+.pv-thanks{
+  text-align:center;font-size:12px;color:var(--sub);
+  font-style:italic;margin:10px 0 4px;
+}
+.pv-footer{
+  background:var(--bg);
+  border-top:1px solid var(--sep);
+  padding:12px 16px;text-align:center;
+}
+.pv-footer-name{font-size:13px;font-weight:700;color:var(--text)}
+.pv-footer-info{font-size:12px;color:var(--sub);margin-top:2px}
+
+/* ── TOAST ── */
+#toast{
+  position:fixed;bottom:calc(80px + var(--safe-bottom));
+  left:50%;transform:translateX(-50%) translateY(10px);
+  background:rgba(13,13,20,0.88);color:white;
+  padding:10px 22px;border-radius:22px;
+  font-size:13px;z-index:999;
+  opacity:0;transition:all 0.25s;pointer-events:none;
+  white-space:nowrap;backdrop-filter:blur(8px);
+}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── CONFIRM ── */
+#confirmOverlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,0.5);z-index:500;
+  align-items:center;justify-content:center;
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+}
+#confirmOverlay.on{display:flex}
+.confirm-box{
+  background:var(--card);border-radius:16px;
+  width:min(280px,85vw);overflow:hidden;
+  box-shadow:0 24px 60px rgba(0,0,0,0.35);
+}
+.confirm-title{font-size:17px;font-weight:700;text-align:center;padding:20px 16px 6px}
+.confirm-msg{font-size:13px;color:var(--sub);text-align:center;padding:0 16px 18px;line-height:1.5}
+.confirm-btns{display:flex;border-top:1px solid var(--sep)}
+.confirm-btn{
+  flex:1;height:46px;border:none;background:transparent;
+  font-size:16px;font-family:inherit;cursor:pointer;color:#2563EB;
+}
+.confirm-btn+.confirm-btn{border-left:1px solid var(--sep)}
+.confirm-btn.danger{color:var(--red);font-weight:700}
+
+/* SVG badge on row */
+.svc-tag{
+  display:inline-block;font-size:10px;font-weight:700;
+  padding:2px 6px;border-radius:4px;
+  background:rgba(13,13,20,0.07);color:var(--sub);
+  text-transform:uppercase;letter-spacing:0.5px;
+}
+@media(prefers-color-scheme:dark){
+  .svc-tag{background:rgba(255,255,255,0.1);color:var(--sub)}
+}
+
+/* date/time inputs */
+input[type="date"],input[type="time"]{-webkit-appearance:none;appearance:none}
+</style>
+</head>
+<body>
+
+<!-- NAVIGATION -->
+<div id="navBar">
+  <button id="navLeft" onclick="navBack()"></button>
+  <div id="navTitle">Bon de Commande</div>
+  <button id="navRight" onclick="navAction()"></button>
+</div>
+
+<!-- SCREEN: LIST -->
+<div class="screen" id="scList">
+  <div class="list-hero">
+    <div class="list-hero-label">Fernand Michel Sebag</div>
+    <div class="list-hero-title">Bons de commande</div>
+    <div class="list-hero-sub" id="listSub">Transport privé</div>
+  </div>
+  <div class="section">
+    <div class="section-hdr" id="listHdr"></div>
+    <div class="card-list" id="orderListEl"></div>
+  </div>
+  <div id="emptyState" style="display:none">
+    <div class="empty">
+      <!-- Mercedes Classe V SVG illustration -->
+      <div class="empty-svg">
+        <svg viewBox="0 0 320 115" xmlns="http://www.w3.org/2000/svg" style="width:100%">
+          <!-- Ground shadow -->
+          <ellipse cx="160" cy="112" rx="130" ry="6" fill="currentColor" opacity="0.06"/>
+          <!-- Lower body -->
+          <rect x="24" y="50" width="272" height="46" rx="5" fill="#C8C9CB"/>
+          <!-- Roof/greenhouse -->
+          <path d="M64 50 L79 13 Q81 9 86 9 L263 9 Q270 9 272 15 L287 50 Z" fill="#D4D5D8"/>
+          <!-- Lower body shadow strip -->
+          <rect x="24" y="76" width="272" height="20" rx="0" fill="#B8B9BC"/>
+          <!-- Front face -->
+          <path d="M24 50 L24 96 L65 96 L65 50 Z" fill="#AFAFB2"/>
+          <!-- Windshield -->
+          <path d="M67 50 L80 13 L112 13 L112 50 Z" fill="#C2DCF0" opacity="0.82"/>
+          <!-- Front window frame -->
+          <path d="M65 50 L79 12 L84 12 L71 50 Z" fill="#3A3A3A"/>
+          <!-- Side window 1 -->
+          <rect x="116" y="12" width="44" height="34" rx="3" fill="#C2DCF0" opacity="0.82"/>
+          <!-- Side window 2 (sliding) -->
+          <rect x="165" y="12" width="67" height="34" rx="3" fill="#C2DCF0" opacity="0.82"/>
+          <!-- Rear quarter window -->
+          <rect x="237" y="12" width="38" height="34" rx="3" fill="#C2DCF0" opacity="0.55"/>
+          <!-- Pillars -->
+          <rect x="112" y="9" width="5" height="87" fill="#2E2E2E"/>
+          <rect x="162" y="9" width="5" height="87" fill="#2E2E2E"/>
+          <rect x="234" y="9" width="5" height="87" fill="#2E2E2E"/>
+          <rect x="273" y="9" width="5" height="87" fill="#2E2E2E"/>
+          <!-- Rear face -->
+          <path d="M278 50 L296 50 L296 96 L278 96 Z" fill="#AFAFB2"/>
+          <!-- Front headlights (LED) -->
+          <rect x="26" y="53" width="15" height="9" rx="2" fill="#F5EFC8"/>
+          <rect x="26" y="64" width="11" height="7" rx="1" fill="#F8CCCC" opacity="0.8"/>
+          <!-- Grille -->
+          <rect x="27" y="73" width="34" height="2.5" rx="1" fill="#999" opacity="0.5"/>
+          <rect x="27" y="78" width="34" height="2.5" rx="1" fill="#999" opacity="0.5"/>
+          <rect x="27" y="83" width="34" height="2.5" rx="1" fill="#999" opacity="0.5"/>
+          <rect x="27" y="88" width="34" height="2.5" rx="1" fill="#999" opacity="0.5"/>
+          <!-- Mercedes 3-pointed star -->
+          <circle cx="50" cy="63" r="8" fill="none" stroke="#C0C0C0" stroke-width="1.5"/>
+          <line x1="50" y1="55" x2="50" y2="63" stroke="#C0C0C0" stroke-width="2"/>
+          <line x1="43" y1="70" x2="50" y2="63" stroke="#C0C0C0" stroke-width="2"/>
+          <line x1="57" y1="70" x2="50" y2="63" stroke="#C0C0C0" stroke-width="2"/>
+          <!-- Rear lights -->
+          <rect x="280" y="53" width="14" height="11" rx="2" fill="#FCA5A5"/>
+          <rect x="280" y="66" width="14" height="14" rx="2" fill="#EF4444"/>
+          <!-- Rear bumper step -->
+          <rect x="278" y="91" width="18" height="5" rx="2" fill="#999"/>
+          <!-- Chrome side trim -->
+          <rect x="24" y="74" width="272" height="2" rx="1" fill="#D0D0D0"/>
+          <!-- Running board -->
+          <rect x="25" y="92" width="271" height="4" rx="2" fill="#9A9A9C"/>
+          <!-- Front bumper -->
+          <rect x="24" y="92" width="42" height="4" rx="2" fill="#9A9A9C"/>
+          <!-- Wheel arch front -->
+          <ellipse cx="80" cy="97" rx="28" ry="9" fill="#2A2A2A"/>
+          <!-- Wheel arch rear -->
+          <ellipse cx="240" cy="97" rx="28" ry="9" fill="#2A2A2A"/>
+          <!-- Front wheel -->
+          <circle cx="80" cy="101" r="22" fill="#222"/>
+          <circle cx="80" cy="101" r="13" fill="#888"/>
+          <circle cx="80" cy="101" r="6" fill="#222"/>
+          <!-- Spokes front -->
+          <g stroke="#666" stroke-width="2.2" opacity="0.9">
+            <line x1="80" y1="88" x2="80" y2="114"/>
+            <line x1="67" y1="101" x2="93" y2="101"/>
+            <line x1="71" y1="92" x2="89" y2="110"/>
+            <line x1="71" y1="110" x2="89" y2="92"/>
+          </g>
+          <!-- Rear wheel -->
+          <circle cx="240" cy="101" r="22" fill="#222"/>
+          <circle cx="240" cy="101" r="13" fill="#888"/>
+          <circle cx="240" cy="101" r="6" fill="#222"/>
+          <!-- Spokes rear -->
+          <g stroke="#666" stroke-width="2.2" opacity="0.9">
+            <line x1="240" y1="88" x2="240" y2="114"/>
+            <line x1="227" y1="101" x2="253" y2="101"/>
+            <line x1="231" y1="92" x2="249" y2="110"/>
+            <line x1="231" y1="110" x2="249" y2="92"/>
+          </g>
+          <!-- Door handles -->
+          <rect x="131" y="65" width="18" height="3.5" rx="1.75" fill="#A0A0A0"/>
+          <rect x="182" y="65" width="20" height="3.5" rx="1.75" fill="#A0A0A0"/>
+          <rect x="247" y="65" width="15" height="3.5" rx="1.75" fill="#A0A0A0"/>
+        </svg>
+      </div>
+      <div class="empty-title">Aucun bon de commande</div>
+      <div class="empty-sub">Appuyez sur <strong>+</strong> pour créer votre premier bon de commande</div>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN: FORM -->
+<div class="screen hidden" id="scForm">
+
+  <!-- Mission -->
+  <div class="fsec">
+    <div class="fsec-title">Mission</div>
+    <div class="fcard">
+      <div class="frow">
+        <span class="flbl w1">Type de service</span>
+        <select id="fService" class="fsel">
+          <option value="VAN">VAN</option>
+          <option value="BERLINE">BERLINE</option>
+          <option value="MINIBUS">MINIBUS</option>
+          <option value="BUS">BUS</option>
+          <option value="MOTO-TAXI">MOTO-TAXI</option>
+          <option value="AUTRE">AUTRE</option>
+        </select>
+      </div>
+      <div class="frow">
+        <span class="flbl w1">Date</span>
+        <input type="date" id="fDate" class="finp" autocomplete="off">
+      </div>
+      <div class="frow">
+        <span class="flbl w1">Heure</span>
+        <input type="time" id="fTime" class="finp" autocomplete="off">
+      </div>
+    </div>
+  </div>
+
+  <!-- Trajet -->
+  <div class="fsec">
+    <div class="fsec-title">Trajet</div>
+    <div class="fcard">
+      <div class="frow tall">
+        <span class="flbl w2" style="padding-top:13px">Départ</span>
+        <textarea id="fDeparture" class="farea" rows="2" placeholder="Adresse de départ…"></textarea>
+      </div>
+      <div class="frow tall">
+        <span class="flbl w2" style="padding-top:13px">Arrivée</span>
+        <textarea id="fDestination" class="farea" rows="2" placeholder="Adresse d'arrivée…"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- Client -->
+  <div class="fsec">
+    <div class="fsec-title">Client</div>
+    <div class="fcard">
+      <div class="frow">
+        <span class="flbl w1">Nom / Prénom</span>
+        <input type="text" id="fClient" class="finp" placeholder="Ex : Eva et Kovi" autocomplete="off">
+      </div>
+      <div class="frow">
+        <span class="flbl w1">Téléphone</span>
+        <input type="tel" id="fClientPhone" class="finp" placeholder="+33 …" autocomplete="off">
+      </div>
+      <div class="frow">
+        <span class="flbl w1">Passagers</span>
+        <div class="stepper">
+          <button class="stbtn" onclick="adjustPax(-1)" id="btnPaxMinus">−</button>
+          <span class="stval" id="paxVal">1</span>
+          <button class="stbtn" onclick="adjustPax(1)">+</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chauffeur -->
+  <div class="fsec">
+    <div class="fsec-title">Chauffeur</div>
+    <div class="fcard">
+      <div class="frow">
+        <span class="flbl w1">Nom</span>
+        <input type="text" id="fDriver" class="finp" placeholder="Nom du chauffeur" autocomplete="off">
+      </div>
+      <div class="frow">
+        <span class="flbl w1">Téléphone</span>
+        <input type="tel" id="fDriverPhone" class="finp" placeholder="06 …" autocomplete="off">
+      </div>
+      <div class="frow">
+        <span class="flbl w1">Véhicule</span>
+        <input type="text" id="fVehicle" class="finp" placeholder="Ex : Mercedes Class V" autocomplete="off">
+      </div>
+      <div class="frow">
+        <span class="flbl w1">Immatricul.</span>
+        <input type="text" id="fPlate" class="finp" placeholder="Ex : HB-190-LY" autocomplete="off" style="text-transform:uppercase">
+      </div>
+    </div>
+  </div>
+
+  <!-- Tarif & Infos -->
+  <div class="fsec">
+    <div class="fsec-title">Tarif &amp; Informations</div>
+    <div class="fcard">
+      <div class="frow">
+        <span class="flbl w1">Tarif sous-trait.</span>
+        <input type="text" id="fPrice" class="finp" placeholder="Ex : 110€ ttc PP" autocomplete="off" inputmode="decimal">
+      </div>
+      <div class="frow tall">
+        <textarea id="fInfo" class="farea" rows="3" placeholder="Informations complémentaires…"></textarea>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- SCREEN: PREVIEW -->
+<div class="screen hidden" id="scPreview">
+  <div class="pv-actions">
+    <button class="pvbtn share" onclick="shareOrder()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>
+      Partager
+    </button>
+    <button class="pvbtn copy" onclick="copyOrder()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+      Copier
+    </button>
+  </div>
+  <div class="pv-card">
+    <div class="pv-card-top">
+      <div class="pv-card-top-label">Votre mission — service commandé</div>
+      <div class="pv-card-top-svc" id="pvService">VAN</div>
+    </div>
+    <div class="pv-body" id="pvBody"></div>
+    <div class="pv-footer" id="pvFooter"></div>
+  </div>
+  <div style="display:flex;gap:10px;margin:0 16px 28px">
+    <button class="pvbtn edit" style="flex:1" onclick="editCurrentOrder()">Modifier</button>
+    <button class="pvbtn del" style="flex:1" onclick="askDelete()">Supprimer</button>
+  </div>
+</div>
+
+<!-- FAB -->
+<button class="fab" id="fabBtn" onclick="openNewForm()">+</button>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- CONFIRM -->
+<div id="confirmOverlay">
+  <div class="confirm-box">
+    <div class="confirm-title">Supprimer</div>
+    <div class="confirm-msg">Voulez-vous supprimer ce bon de commande ?</div>
+    <div class="confirm-btns">
+      <button class="confirm-btn" onclick="closeConfirm()">Annuler</button>
+      <button class="confirm-btn danger" onclick="doDelete()">Supprimer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+let orders = [];
+let stack = ['list'];
+let editId = null;
+let previewId = null;
+let deleteId = null;
+let pax = 1;
+
+const COMPANY = {
+  name: 'Fernand Michel Sebag',
+  phone: '+33661376190',
+  siret: '90776001100029'
+};
+
+// ── STORAGE ──────────────────────────────────────
+function load() {
+  try { orders = JSON.parse(localStorage.getItem('ts_orders') || '[]'); } catch(e) { orders = []; }
+}
+function save() { localStorage.setItem('ts_orders', JSON.stringify(orders)); }
+const DEFAULT_DRIVER = {
+  driverName:  'Michel',
+  driverPhone: '0661376190',
+  vehicle:     'Mercedes Class V',
+  plate:       'HB190LY'
+};
+function loadDriver() {
+  try { return JSON.parse(localStorage.getItem('ts_driver') || 'null') || DEFAULT_DRIVER; } catch(e) { return DEFAULT_DRIVER; }
+}
+function saveDriver(o) {
+  localStorage.setItem('ts_driver', JSON.stringify({
+    driverName: o.driverName, driverPhone: o.driverPhone,
+    vehicle: o.vehicle, plate: o.plate
+  }));
+}
+
+// ── ID ───────────────────────────────────────────
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+// ── DATE ─────────────────────────────────────────
+const FR_DAYS   = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+const FR_MONTHS = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+
+function formatDateFR(ds, ts) {
+  if (!ds || !ts) return '—';
+  const [y,m,d] = ds.split('-').map(Number);
+  const [h,mn] = ts.split(':').map(Number);
+  const dt = new Date(y, m-1, d, h, mn);
+  return `${FR_DAYS[dt.getDay()]} ${d} ${FR_MONTHS[m-1]} ${y} à ${String(h).padStart(2,'0')}:${String(mn).padStart(2,'0')}`;
+}
+function shortDate(ds) {
+  if (!ds) return '';
+  const [y,m,d] = ds.split('-').map(Number);
+  return `${String(d).padStart(2,'0')}/${String(m).padStart(2,'0')}/${y}`;
+}
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+// ── GENERATE TEXT ─────────────────────────────────
+function generateText(o) {
+  const L = [];
+  L.push(`VOTRE MISSION - SERVICE COMMANDÉ : ${o.serviceType}`);
+  L.push('-------------------------');
+  L.push(`Date et heure : ${formatDateFR(o.date, o.time)}`);
+  L.push('');
+  L.push(`Départ : ${o.departure}`);
+  L.push('');
+  L.push(`Destination : ${o.destination}`);
+  L.push('');
+  L.push(`client : ${o.clientName}`);
+  L.push(`Tel : ${o.clientPhone}${o.passengers ? ` (${o.passengers} pax)` : ''}`);
+  L.push('');
+  L.push(`Chauffeur : ${o.driverName}`);
+  if (o.driverPhone) L.push(o.driverPhone);
+  if (o.vehicle)     L.push(o.vehicle);
+  if (o.plate)       L.push(o.plate);
+  L.push(''); L.push('');
+  if (o.price) L.push(`Tarif sous-traitant : ${o.price}`);
+  L.push('');
+  L.push(`Infos : ${o.info || ''}`);
+  L.push(''); L.push('');
+  L.push('Nous vous remercions pour votre confiance.');
+  L.push('-------------------------');
+  L.push(' '); L.push(' ');
+  L.push(COMPANY.name);
+  L.push(`En cas de besoin : ${COMPANY.phone}`);
+  L.push(`Siret ${COMPANY.siret}`);
+  return L.join('\n');
+}
+
+// ── SCREEN NAVIGATION ────────────────────────────
+function showScreen(id) {
+  const screens = ['scList','scForm','scPreview'];
+  const curName = id.replace('sc','').toLowerCase();
+  const curIdx  = stack.indexOf(curName);
+  screens.forEach(s => {
+    const el = document.getElementById(s);
+    if (s === id) {
+      el.classList.remove('hidden','behind');
+    } else {
+      const sIdx = stack.indexOf(s.replace('sc','').toLowerCase());
+      if (sIdx >= 0 && sIdx < curIdx) {
+        el.classList.add('behind'); el.classList.remove('hidden');
+      } else {
+        el.classList.add('hidden'); el.classList.remove('behind');
+      }
+    }
+  });
+  updateNav();
+}
+function pushScreen(id) {
+  stack.push(id);
+  showScreen('sc' + id[0].toUpperCase() + id.slice(1));
+}
+function popScreen() {
+  if (stack.length > 1) stack.pop();
+  const cur = stack[stack.length-1];
+  showScreen('sc' + cur[0].toUpperCase() + cur.slice(1));
+}
+
+// ── NAV BAR ──────────────────────────────────────
+function updateNav() {
+  const cur = stack[stack.length-1];
+  const L = document.getElementById('navLeft');
+  const T = document.getElementById('navTitle');
+  const R = document.getElementById('navRight');
+  const fab = document.getElementById('fabBtn');
+  const back = '<svg width="8" height="14" viewBox="0 0 9 16" fill="currentColor"><path d="M8 1L1 8l7 7"/></svg>';
+  if (cur === 'list') {
+    L.innerHTML = ''; T.textContent = 'Bon de Commande'; R.textContent = '';
+    fab.style.display = 'flex';
+  } else if (cur === 'form') {
+    L.innerHTML = back + ' Retour'; T.textContent = editId ? 'Modifier' : 'Nouveau bon';
+    R.textContent = 'Enregistrer'; fab.style.display = 'none';
+  } else if (cur === 'preview') {
+    L.innerHTML = back + ' Retour'; T.textContent = 'Bon de commande';
+    R.textContent = ''; fab.style.display = 'none';
+  }
+}
+function navBack() {
+  const cur = stack[stack.length-1];
+  if (cur === 'form') { if (confirm('Abandonner les modifications ?')) popScreen(); }
+  else popScreen();
+}
+function navAction() {
+  if (stack[stack.length-1] === 'form') saveForm();
+}
+
+// ── LIST ─────────────────────────────────────────
+function renderList() {
+  const el    = document.getElementById('orderListEl');
+  const empty = document.getElementById('emptyState');
+  const hdr   = document.getElementById('listHdr');
+  const sub   = document.getElementById('listSub');
+  const n     = orders.length;
+
+  sub.textContent = n === 0 ? 'Transport privé'
+    : `${n} bon${n>1?'s':''} de commande`;
+
+  if (n === 0) {
+    el.parentElement.style.display = 'none';
+    empty.style.display = 'block';
+    return;
+  }
+  el.parentElement.style.display = 'block';
+  empty.style.display = 'none';
+  hdr.textContent = `${n} mission${n>1?'s':''}`;
+
+  const sorted = [...orders].sort((a,b) => {
+    return new Date((b.date||'2000-01-01')+'T'+(b.time||'00:00'))
+         - new Date((a.date||'2000-01-01')+'T'+(a.time||'00:00'));
+  });
+
+  // Small van SVG icon for rows
+  const vanIcon = `<svg viewBox="0 0 24 16" xmlns="http://www.w3.org/2000/svg" fill="white" opacity="0.9">
+    <rect x="1" y="4" width="22" height="9" rx="2"/>
+    <path d="M5 4 L7 1 L18 1 L20 4 Z"/>
+    <rect x="7" y="1.5" width="4" height="2.2" rx="0.5" fill="#1A3A6E" opacity="0.6"/>
+    <rect x="12" y="1.5" width="4" height="2.2" rx="0.5" fill="#1A3A6E" opacity="0.6"/>
+    <circle cx="6" cy="13" r="2.5" fill="#555"/><circle cx="6" cy="13" r="1.2" fill="#888"/>
+    <circle cx="18" cy="13" r="2.5" fill="#555"/><circle cx="18" cy="13" r="1.2" fill="#888"/>
+  </svg>`;
+
+  el.innerHTML = sorted.map(o => `
+    <div class="order-row" onclick="openPreview('${o.id}')">
+      <div class="order-row-dot">${vanIcon}</div>
+      <div class="order-row-body">
+        <div class="order-row-top">
+          <div class="order-row-client">${esc(o.clientName || 'Client non défini')}</div>
+          <div class="order-row-date">${shortDate(o.date)}</div>
+        </div>
+        <div class="order-row-dest">
+          <span class="svc-tag">${esc(o.serviceType)}</span>
+          &nbsp;→ ${esc(o.destination || 'Destination non définie')}
+        </div>
+        ${o.price ? `<div class="order-row-price">${esc(o.price)}</div>` : ''}
+      </div>
+      <div class="order-row-chv">›</div>
+    </div>
+  `).join('');
+}
+
+// ── FORM ─────────────────────────────────────────
+function openNewForm() {
+  editId = null; pax = 1;
+  const d = loadDriver();
+  document.getElementById('fService').value = 'VAN';
+  document.getElementById('fDate').value = todayStr();
+  document.getElementById('fTime').value = '';
+  document.getElementById('fDeparture').value = '';
+  document.getElementById('fDestination').value = '';
+  document.getElementById('fClient').value = '';
+  document.getElementById('fClientPhone').value = '';
+  document.getElementById('fDriver').value = d.driverName || '';
+  document.getElementById('fDriverPhone').value = d.driverPhone || '';
+  document.getElementById('fVehicle').value = d.vehicle || '';
+  document.getElementById('fPlate').value = d.plate || '';
+  document.getElementById('fPrice').value = '';
+  document.getElementById('fInfo').value = '';
+  document.getElementById('paxVal').textContent = '1';
+  document.getElementById('btnPaxMinus').disabled = true;
+  pushScreen('form');
+}
+
+function editCurrentOrder() {
+  const o = orders.find(x => x.id === previewId);
+  if (!o) return;
+  editId = o.id; pax = o.passengers || 1;
+  document.getElementById('fService').value = o.serviceType || 'VAN';
+  document.getElementById('fDate').value = o.date || todayStr();
+  document.getElementById('fTime').value = o.time || '';
+  document.getElementById('fDeparture').value = o.departure || '';
+  document.getElementById('fDestination').value = o.destination || '';
+  document.getElementById('fClient').value = o.clientName || '';
+  document.getElementById('fClientPhone').value = o.clientPhone || '';
+  document.getElementById('fDriver').value = o.driverName || '';
+  document.getElementById('fDriverPhone').value = o.driverPhone || '';
+  document.getElementById('fVehicle').value = o.vehicle || '';
+  document.getElementById('fPlate').value = o.plate || '';
+  document.getElementById('fPrice').value = o.price || '';
+  document.getElementById('fInfo').value = o.info || '';
+  document.getElementById('paxVal').textContent = pax;
+  document.getElementById('btnPaxMinus').disabled = pax <= 1;
+  pushScreen('form');
+}
+
+function adjustPax(d) {
+  pax = Math.max(1, Math.min(50, pax + d));
+  document.getElementById('paxVal').textContent = pax;
+  document.getElementById('btnPaxMinus').disabled = pax <= 1;
+}
+
+function saveForm() {
+  const o = {
+    id: editId || uid(),
+    serviceType:  document.getElementById('fService').value,
+    date:         document.getElementById('fDate').value,
+    time:         document.getElementById('fTime').value,
+    departure:    document.getElementById('fDeparture').value.trim(),
+    destination:  document.getElementById('fDestination').value.trim(),
+    clientName:   document.getElementById('fClient').value.trim(),
+    clientPhone:  document.getElementById('fClientPhone').value.trim(),
+    passengers:   pax,
+    driverName:   document.getElementById('fDriver').value.trim(),
+    driverPhone:  document.getElementById('fDriverPhone').value.trim(),
+    vehicle:      document.getElementById('fVehicle').value.trim(),
+    plate:        document.getElementById('fPlate').value.trim().toUpperCase(),
+    price:        document.getElementById('fPrice').value.trim(),
+    info:         document.getElementById('fInfo').value.trim(),
+    createdAt: editId ? (orders.find(x=>x.id===editId)||{}).createdAt : Date.now()
+  };
+
+  if (!o.date)       { toast('Veuillez saisir une date'); return; }
+  if (!o.departure)  { toast('Veuillez saisir le départ'); return; }
+  if (!o.destination){ toast('Veuillez saisir la destination'); return; }
+  if (!o.clientName) { toast('Veuillez saisir le nom du client'); return; }
+
+  if (editId) { const i = orders.findIndex(x=>x.id===editId); if(i>=0) orders[i]=o; }
+  else orders.unshift(o);
+
+  save(); saveDriver(o); renderList(); previewId = o.id;
+  if (editId) {
+    renderPreview(o);
+    stack = stack.filter(s => s !== 'form');
+    showScreen('scPreview'); updateNav();
+  } else {
+    stack = ['list','preview']; renderPreview(o);
+    showScreen('scPreview'); updateNav();
+  }
+  editId = null;
+  toast('Bon enregistré');
+}
+
+// ── PREVIEW ──────────────────────────────────────
+function openPreview(id) {
+  const o = orders.find(x => x.id === id);
+  if (!o) return;
+  previewId = id; renderPreview(o); pushScreen('preview');
+}
+
+function renderPreview(o) {
+  document.getElementById('pvService').textContent = o.serviceType;
+
+  const rows = [
+    { l:'Date et heure', v: formatDateFR(o.date, o.time) },
+    { l:'Départ',        v: o.departure },
+    { l:'Destination',   v: o.destination },
+    null,
+    { l:'Client',        v: o.clientName },
+    { l:'Téléphone',     v: `${o.clientPhone}${o.passengers ? ` (${o.passengers} pax)` : ''}` },
+    null,
+    { l:'Chauffeur',     v: o.driverName },
+    o.driverPhone ? { l:'Tél. chauffeur', v: o.driverPhone } : null,
+    o.vehicle     ? { l:'Véhicule',       v: o.vehicle }     : null,
+    o.plate       ? { l:'Immatriculation',v: o.plate }       : null,
+    null,
+    o.price ? { l:'Tarif sous-traitant', v: o.price } : null,
+    o.info  ? { l:'Informations',        v: o.info  } : null,
+  ].filter(r => r !== undefined);
+
+  document.getElementById('pvBody').innerHTML = rows.map(r => {
+    if (r === null) return '<hr class="pv-hr">';
+    return `<div class="pv-row">
+      <div class="pv-lbl">${r.l}</div>
+      <div class="pv-val">${esc(r.v || '—')}</div>
+    </div>`;
+  }).join('') + '<hr class="pv-hr"><div class="pv-thanks">Nous vous remercions pour votre confiance.</div>';
+
+  document.getElementById('pvFooter').innerHTML =
+    `<div class="pv-footer-name">${COMPANY.name}</div>` +
+    `<div class="pv-footer-info">En cas de besoin : ${COMPANY.phone} · Siret ${COMPANY.siret}</div>`;
+}
+
+// ── SHARE / COPY ─────────────────────────────────
+function shareOrder() {
+  const o = orders.find(x => x.id === previewId);
+  if (!o) return;
+  const text = generateText(o);
+  if (navigator.share) navigator.share({ text }).catch(()=>{});
+  else { copyText(text); toast('Texte copié'); }
+}
+function copyOrder() {
+  const o = orders.find(x => x.id === previewId);
+  if (!o) return;
+  copyText(generateText(o)); toast('Copié dans le presse-papier');
+}
+function copyText(t) {
+  if (navigator.clipboard) navigator.clipboard.writeText(t).catch(()=>fallbackCopy(t));
+  else fallbackCopy(t);
+}
+function fallbackCopy(t) {
+  const ta = document.createElement('textarea');
+  ta.value = t; ta.style.cssText = 'position:fixed;opacity:0';
+  document.body.appendChild(ta); ta.focus(); ta.select();
+  document.execCommand('copy'); document.body.removeChild(ta);
+}
+
+// ── DELETE ───────────────────────────────────────
+function askDelete() { deleteId = previewId; document.getElementById('confirmOverlay').classList.add('on'); }
+function closeConfirm() { document.getElementById('confirmOverlay').classList.remove('on'); deleteId = null; }
+function doDelete() {
+  if (!deleteId) return;
+  orders = orders.filter(x => x.id !== deleteId);
+  save(); renderList(); closeConfirm();
+  stack = ['list']; showScreen('scList'); updateNav(); toast('Bon supprimé');
+}
+
+// ── TOAST ────────────────────────────────────────
+let toastTmr;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('on');
+  clearTimeout(toastTmr);
+  toastTmr = setTimeout(() => el.classList.remove('on'), 2400);
+}
+
+// ── UTILS ────────────────────────────────────────
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/\n/g,'<br>');
+}
+
+// ── INIT ─────────────────────────────────────────
+load(); renderList(); showScreen('scList'); updateNav();
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+</script>
+</body>
+</html>

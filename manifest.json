@@ -1,0 +1,10 @@
+{
+  "name": "Bon de Commande",
+  "short_name": "Bon de Commande",
+  "description": "Bons de commande — Fernand Michel Sebag Transport",
+  "start_url": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F4F3EF",
+  "theme_color": "#0D0D14"
+}
