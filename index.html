@@ -178,7 +178,7 @@ body{
 .fab:active{transform:scale(0.94);box-shadow:0 2px 10px rgba(0,0,0,0.2)}
 
 /* ── FORM SCREEN ── */
-.fsec{margin:0 16px 20px}
+.fsec{margin:0 16px 20px;position:relative;}
 .fsec-title{
   font-size:11px;font-weight:700;
   color:var(--sub);letter-spacing:0.8px;
@@ -235,6 +235,30 @@ body{
 }
 .stbtn:disabled{opacity:0.25}
 .stbtn:active{opacity:0.7}
+
+/* ── SUGGESTIONS AUTOCOMPLETE ── */
+.autocomplete-suggestions {
+  position: absolute;
+  background: var(--card);
+  border: 1px solid var(--sep);
+  border-radius: 8px;
+  max-height: 160px;
+  overflow-y: auto;
+  z-index: 999;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  width: calc(100% - 32px);
+  margin-left: 16px;
+}
+.autocomplete-suggestion {
+  padding: 11px 14px;
+  cursor: pointer;
+  font-size: 14px;
+  border-bottom: 1px solid var(--sep);
+  color: var(--text);
+  text-align: left;
+}
+.autocomplete-suggestion:last-child { border-bottom: none; }
+.autocomplete-suggestion:active { background: rgba(0,0,0,0.06); }
 
 /* ── PREVIEW SCREEN ── */
 .pv-actions{display:flex;gap:8px;margin:4px 16px 14px}
@@ -345,12 +369,14 @@ input[type="date"],input[type="time"]{-webkit-appearance:none;appearance:none}
 </head>
 <body>
 
+<!-- NAVIGATION -->
 <div id="navBar">
   <button id="navLeft" onclick="navBack()"></button>
   <div id="navTitle">Bon de Commande</div>
   <button id="navRight" onclick="navAction()"></button>
 </div>
 
+<!-- SCREEN: LIST -->
 <div class="screen" id="scList">
   <div class="list-hero">
     <div class="list-hero-label">Fernand Michel Sebag</div>
@@ -427,8 +453,10 @@ input[type="date"],input[type="time"]{-webkit-appearance:none;appearance:none}
   </div>
 </div>
 
+<!-- SCREEN: FORM -->
 <div class="screen hidden" id="scForm">
 
+  <!-- Mission -->
   <div class="fsec">
     <div class="fsec-title">Mission</div>
     <div class="fcard">
@@ -454,20 +482,25 @@ input[type="date"],input[type="time"]{-webkit-appearance:none;appearance:none}
     </div>
   </div>
 
+  <!-- Trajet -->
   <div class="fsec">
     <div class="fsec-title">Trajet</div>
     <div class="fcard">
-      <div class="frow tall">
-        <span class="flbl w2" style="padding-top:13px">Départ</span>
-        <textarea id="fDeparture" class="farea" rows="2" placeholder="Adresse de départ…"></textarea>
+      <div class="frow">
+        <span class="flbl w2">Départ</span>
+        <input type="text" id="fDeparture" class="finp la" placeholder="Adresse de départ…" autocomplete="off">
       </div>
-      <div class="frow tall">
-        <span class="flbl w2" style="padding-top:13px">Arrivée</span>
-        <textarea id="fDestination" class="farea" rows="2" placeholder="Adresse d'arrivée…"></textarea>
+      <div id="depSuggestions" class="autocomplete-suggestions" style="display:none;"></div>
+      
+      <div class="frow">
+        <span class="flbl w2">Arrivée</span>
+        <input type="text" id="fDestination" class="finp la" placeholder="Adresse d'arrivée…" autocomplete="off">
       </div>
+      <div id="destSuggestions" class="autocomplete-suggestions" style="display:none;"></div>
     </div>
   </div>
 
+  <!-- Client -->
   <div class="fsec">
     <div class="fsec-title">Client</div>
     <div class="fcard">
@@ -490,6 +523,7 @@ input[type="date"],input[type="time"]{-webkit-appearance:none;appearance:none}
     </div>
   </div>
 
+  <!-- Chauffeur -->
   <div class="fsec">
     <div class="fsec-title">Chauffeur</div>
     <div class="fcard">
@@ -512,6 +546,7 @@ input[type="date"],input[type="time"]{-webkit-appearance:none;appearance:none}
     </div>
   </div>
 
+  <!-- Tarif & Infos -->
   <div class="fsec">
     <div class="fsec-title">Tarif &amp; Informations</div>
     <div class="fcard">
@@ -527,6 +562,7 @@ input[type="date"],input[type="time"]{-webkit-appearance:none;appearance:none}
 
 </div>
 
+<!-- SCREEN: PREVIEW -->
 <div class="screen hidden" id="scPreview">
   <div class="pv-actions">
     <button class="pvbtn share-wa" onclick="shareWhatsApp()">
@@ -556,10 +592,13 @@ input[type="date"],input[type="time"]{-webkit-appearance:none;appearance:none}
   </div>
 </div>
 
+<!-- FAB -->
 <button class="fab" id="fabBtn" onclick="openNewForm()">+</button>
 
+<!-- TOAST -->
 <div id="toast"></div>
 
+<!-- CONFIRM -->
 <div id="confirmOverlay">
   <div class="confirm-box">
     <div class="confirm-title">Supprimer</div>
@@ -870,7 +909,6 @@ function saveForm() {
 function renderPreview(o) {
   document.getElementById('pvService').textContent = o.serviceType;
 
-  // Formatage des téléphones cliquables
   const clientPhoneHtml = o.clientPhone ? `<a href="tel:${o.clientPhone}" style="color:inherit; text-decoration:underline;">${o.clientPhone}</a>${o.passengers ? ` (${o.passengers} pax)` : ''}` : '—';
   const driverPhoneHtml = o.driverPhone ? `<a href="tel:${o.driverPhone}" style="color:inherit; text-decoration:underline;">${o.driverPhone}</a>` : null;
 
@@ -952,6 +990,48 @@ function fallbackCopy(t) {
   document.execCommand('copy'); document.body.removeChild(ta);
 }
 
+// ── AUTOCOMPLETE ADRESSE FRANCE ──────────────────
+function setupAutocomplete(inputId, suggestionsId) {
+  const input = document.getElementById(inputId);
+  const suggestionsContainer = document.getElementById(suggestionsId);
+
+  input.addEventListener('input', function() {
+    const val = this.value.trim();
+    if (val.length < 3) {
+      suggestionsContainer.style.display = 'none';
+      return;
+    }
+
+    fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(val)}&limit=5`)
+      .then(res => res.json())
+      .then(data => {
+        if (!data.features || data.features.length === 0) {
+          suggestionsContainer.style.display = 'none';
+          return;
+        }
+
+        suggestionsContainer.innerHTML = data.features.map(f => `
+          <div class="autocomplete-suggestion" data-address="${f.properties.label}">
+            ${f.properties.label}
+          </div>
+        `).join('');
+        suggestionsContainer.style.display = 'block';
+
+        suggestionsContainer.querySelectorAll('.autocomplete-suggestion').forEach(item => {
+          item.addEventListener('click', function() {
+            input.value = this.getAttribute('data-address');
+            suggestionsContainer.style.display = 'none';
+          });
+        });
+      })
+      .catch(() => {});
+  });
+
+  document.addEventListener('click', (e) => {
+    if (e.target !== input) suggestionsContainer.style.display = 'none';
+  });
+}
+
 // ── DELETE ───────────────────────────────────────
 function askDelete() { deleteId = previewId; document.getElementById('confirmOverlay').classList.add('on'); }
 function closeConfirm() { document.getElementById('confirmOverlay').classList.remove('on'); deleteId = null; }
@@ -980,10 +1060,11 @@ function esc(s) {
 
 // ── INIT ─────────────────────────────────────────
 load(); renderList(); showScreen('scList'); updateNav();
+setupAutocomplete('fDeparture', 'depSuggestions');
+setupAutocomplete('fDestination', 'destSuggestions');
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
 
-// Raccourci icône PWA "Nouveau bon"
 const urlParams = new URLSearchParams(window.location.search);
 if (urlParams.get('action') === 'new') {
   openNewForm();
