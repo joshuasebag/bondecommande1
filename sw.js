@@ -1,22 +1,37 @@
-const CACHE = 'bdc-v1';
-const ASSETS = ['./'];
+const CACHE_NAME = 'vtc-bon-commande-v1';
+const ASSETS = [
+  './',
+  './index.html',
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png'
+];
 
-self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
-  self.skipWaiting();
+// Installe le service worker et met en cache l'application
+self.addEventListener('install', (e) => {
+  e.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(ASSETS);
+    }).then(() => self.skipWaiting())
+  );
 });
-self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(keys =>
-    Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-  ));
-  self.clients.claim();
+
+// Nettoie les anciens caches si tu mets à jour l'application
+self.addEventListener('activate', (e) => {
+  e.waitUntil(
+    caches.keys().then((keys) => {
+      return Promise.all(
+        keys.map((key) => {
+          if (key !== CACHE_NAME) return caches.delete(key);
+        })
+      );
+    }).then(() => self.clients.claim())
+  );
 });
-self.addEventListener('fetch', e => {
+
+// Stratégie Network-First : charge le réseau si dispo (pour avoir tes modifs de code direct), sinon bascule sur le cache local
+self.addEventListener('fetch', (e) => {
   e.respondWith(
-    caches.match(e.request).then(r => r || fetch(e.request).then(res => {
-      const clone = res.clone();
-      caches.open(CACHE).then(c => c.put(e.request, clone));
-      return res;
-    }))
+    fetch(e.request).catch(() => caches.match(e.request))
   );
 });
