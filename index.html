@@ -193,6 +193,7 @@ body{
   display:flex;align-items:center;
   padding:0 14px;min-height:46px;
   border-bottom:1px solid var(--sep);
+  position:relative;
 }
 .frow:last-child{border-bottom:none}
 .frow.tall{align-items:flex-start;padding-top:11px;padding-bottom:11px}
@@ -246,8 +247,6 @@ body{
   overflow-y: auto;
   z-index: 999;
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  width: calc(100% - 32px);
-  margin-left: 16px;
 }
 .autocomplete-suggestion {
   padding: 11px 14px;
@@ -974,6 +973,66 @@ function shareSystem() {
   else { copyText(text); toast('Texte copié'); }
 }
 
+// ── CODE AUTOCOMPLETE ADRESSE CORRIGÉ (CORS & POSITION) ──
+function setupAutocomplete(inputId, suggestionsId) {
+  const input = document.getElementById(inputId);
+  const suggestionsContainer = document.getElementById(suggestionsId);
+
+  if (input.parentElement) {
+    input.parentElement.style.position = 'relative';
+  }
+
+  input.addEventListener('input', function() {
+    const val = this.value.trim();
+    if (val.length < 3) {
+      suggestionsContainer.style.display = 'none';
+      return;
+    }
+
+    fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(val)}&limit=5`, {
+      method: 'GET',
+      mode: 'cors'
+    })
+      .then(res => {
+        if (!res.ok) throw new Error('Erreur API');
+        return res.json();
+      })
+      .then(data => {
+        if (!data.features || data.features.length === 0) {
+          suggestionsContainer.style.display = 'none';
+          return;
+        }
+
+        suggestionsContainer.innerHTML = data.features.map(f => `
+          <div class="autocomplete-suggestion" data-address="${f.properties.label}">
+            ${f.properties.label}
+          </div>
+        `).join('');
+        
+        suggestionsContainer.style.display = 'block';
+        suggestionsContainer.style.position = 'absolute';
+        suggestionsContainer.style.top = '46px';
+        suggestionsContainer.style.left = '0';
+        suggestionsContainer.style.width = '100%';
+        suggestionsContainer.style.marginLeft = '0';
+
+        suggestionsContainer.querySelectorAll('.autocomplete-suggestion').forEach(item => {
+          item.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            input.value = this.getAttribute('data-address');
+            suggestionsContainer.style.display = 'none';
+          });
+        });
+      })
+      .catch(() => {});
+  });
+
+  document.addEventListener('click', (e) => {
+    if (e.target !== input) suggestionsContainer.style.display = 'none';
+  });
+}
+
 function copyOrder() {
   const o = orders.find(x => x.id === previewId);
   if (!o) return;
@@ -988,48 +1047,6 @@ function fallbackCopy(t) {
   ta.value = t; ta.style.cssText = 'position:fixed;opacity:0';
   document.body.appendChild(ta); ta.focus(); ta.select();
   document.execCommand('copy'); document.body.removeChild(ta);
-}
-
-// ── AUTOCOMPLETE ADRESSE FRANCE ──────────────────
-function setupAutocomplete(inputId, suggestionsId) {
-  const input = document.getElementById(inputId);
-  const suggestionsContainer = document.getElementById(suggestionsId);
-
-  input.addEventListener('input', function() {
-    const val = this.value.trim();
-    if (val.length < 3) {
-      suggestionsContainer.style.display = 'none';
-      return;
-    }
-
-    fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(val)}&limit=5`)
-      .then(res => res.json())
-      .then(data => {
-        if (!data.features || data.features.length === 0) {
-          suggestionsContainer.style.display = 'none';
-          return;
-        }
-
-        suggestionsContainer.innerHTML = data.features.map(f => `
-          <div class="autocomplete-suggestion" data-address="${f.properties.label}">
-            ${f.properties.label}
-          </div>
-        `).join('');
-        suggestionsContainer.style.display = 'block';
-
-        suggestionsContainer.querySelectorAll('.autocomplete-suggestion').forEach(item => {
-          item.addEventListener('click', function() {
-            input.value = this.getAttribute('data-address');
-            suggestionsContainer.style.display = 'none';
-          });
-        });
-      })
-      .catch(() => {});
-  });
-
-  document.addEventListener('click', (e) => {
-    if (e.target !== input) suggestionsContainer.style.display = 'none';
-  });
 }
 
 // ── DELETE ───────────────────────────────────────
