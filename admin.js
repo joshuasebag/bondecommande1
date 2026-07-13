@@ -173,63 +173,72 @@ if (vehicleForm) {
 }
 
 
-// --- CALCUL DU CA MENSUEL ULTRA-TOLÉRANT (CORRIGÉ) ---
+// --- CALCUL DU CA MENSUEL ET TOTAL ---
 function calculateDriverStats() {
     const statsContainer = document.getElementById('driverStatsContainer');
     if (!statsContainer) return;
 
     const currentDate = new Date();
     const currentYear = currentDate.getFullYear();
-    const currentMonthNum = String(currentDate.getMonth() + 1).padStart(2, '0'); // ex: "07"
+    const currentMonthNum = String(currentDate.getMonth() + 1).padStart(2, '0');
     const currentYearMonthStr = `${currentYear}-${currentMonthNum}`; // ex: "2026-07"
 
-    // Initialisation par défaut pour éviter le blocage à 0
-    const driverEarnings = {
-        "Michel": 0,
-        "Chauffeur 2": 0
-    };
+    // Initialisation pour stocker le CA par mois ET par total
+    const driverEarningsMonth = { "Michel": 0, "Chauffeur 2": 0 };
+    const driverEarningsTotal = { "Michel": 0, "Chauffeur 2": 0 };
 
     globalOrders.forEach(order => {
         if (!order.status || !order.date) return;
 
-        // Nettoyer le statut pour ignorer les majuscules et les accents (ex: "Déposé" -> "depose")
-        const cleanStatus = order.status.toLowerCase()
-                                         .normalize("NFD")
-                                         .replace(/[\u0300-\u036f]/g, "")
-                                         .trim();
+        // Nettoyer le statut
+        const cleanStatus = order.status.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
 
-        // On accepte "depose" ou "termine"
         if (cleanStatus === "depose" || cleanStatus === "termine") {
-            const orderYearMonth = order.date.substring(0, 7).trim(); // Récupère "AAAA-MM"
+            const driver = order.driver_name || "Non assigné";
+            const price = parseFloat(order.price) || 0;
 
+            // 1. Ajouter au CA TOTAL GLOBAL (Toutes dates confondues)
+            if (driverEarningsTotal[driver] === undefined) driverEarningsTotal[driver] = 0;
+            driverEarningsTotal[driver] += price;
+
+            // 2. Ajouter au CA DU MOIS (Uniquement si la date correspond à ce mois-ci)
+            const orderYearMonth = order.date.substring(0, 7).trim(); 
             if (orderYearMonth === currentYearMonthStr) {
-                const driver = order.driver_name || "Non assigné";
-                const price = parseFloat(order.price) || 0;
-
-                if (driverEarnings[driver] === undefined) {
-                    driverEarnings[driver] = 0;
-                }
-                driverEarnings[driver] += price;
+                if (driverEarningsMonth[driver] === undefined) driverEarningsMonth[driver] = 0;
+                driverEarningsMonth[driver] += price;
             }
         }
     });
 
-    // Génération propre de l'affichage
     statsContainer.innerHTML = '';
     const monthName = currentDate.toLocaleDateString('fr-FR', { month: 'long' });
     const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
 
-    Object.keys(driverEarnings).forEach(driver => {
-        const earnings = driverEarnings[driver];
+    // On fusionne les listes de chauffeurs pour tout afficher
+    const allDrivers = new Set([...Object.keys(driverEarningsMonth), ...Object.keys(driverEarningsTotal)]);
+
+    allDrivers.forEach(driver => {
+        const monthCA = driverEarningsMonth[driver] || 0;
+        const totalCA = driverEarningsTotal[driver] || 0;
+        
         const statBox = document.createElement('div');
         statBox.className = 'stat-box';
         statBox.innerHTML = `
-            <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">
-                ${driver} (${capitalizedMonth})
-            </span>
-            <span class="stat-value" style="color: ${earnings > 0 ? 'var(--success)' : 'var(--text-muted)'}">
-                ${earnings.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
-            </span>
+            <div style="font-size: 12px; font-weight: 700; color: var(--text-main); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px dashed var(--border); padding-bottom: 8px; margin-bottom: 8px;">
+                <i class="fa-solid fa-user-tie" style="color: var(--primary); margin-right: 4px;"></i> ${driver}
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span style="font-size: 11px; color: var(--text-muted);">Mois (${capitalizedMonth})</span>
+                <span style="font-weight: 800; font-size: 14px; color: ${monthCA > 0 ? 'var(--success)' : 'var(--text-main)'};">
+                    ${monthCA.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                </span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 11px; color: var(--text-muted);">Total Annuel</span>
+                <span style="font-weight: 800; font-size: 14px; color: var(--primary);">
+                    ${totalCA.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                </span>
+            </div>
         `;
         statsContainer.appendChild(statBox);
     });
