@@ -11,19 +11,19 @@ try {
     } else if (typeof supabase !== "undefined" && typeof supabase.createClient === "function") {
         supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     } else {
-        throw new Error("La bibliothèque Supabase n'est pas encore chargée dans le navigateur.");
+        throw new Error("La bibliothèque Supabase n'est pas encore chargée.");
     }
 } catch (err) {
-    console.error("Erreur d'initialisation Supabase :", err);
+    console.error("Erreur Supabase :", err);
 }
 
 const coursesContainer = document.getElementById('coursesContainer');
 const connStatus = document.getElementById('connection-status');
 
-// VERROUILLAGE DIRECT SUR MICHEL (Pas besoin de choix)
 const currentDriver = "Michel";
+let allVehicles = [];
 
-// Affichage du statut de connexion
+// Statut de connexion
 if (supabaseClient) {
     if (connStatus) {
         connStatus.innerHTML = '<span style="color:#10b981;">● En ligne</span>';
@@ -31,6 +31,18 @@ if (supabaseClient) {
 } else {
     if (connStatus) {
         connStatus.innerHTML = '<span style="color:#ef4444;">● Erreur de chargement SDK</span>';
+    }
+}
+
+// Charger tous les véhicules pour faire la correspondance
+async function fetchVehicles() {
+    if (!supabaseClient) return;
+    try {
+        const { data, error } = await supabaseClient.from('vehicles').select('*');
+        if (error) throw error;
+        allVehicles = data || [];
+    } catch (err) {
+        console.error("Erreur de récupération des véhicules :", err);
     }
 }
 
@@ -43,18 +55,18 @@ async function fetchDriverCourses() {
             .from('orders')
             .select('*')
             .eq('driver_name', currentDriver)
-            .order('date', { ascending: true }) // Du plus proche au plus lointain
+            .order('date', { ascending: true })
             .order('time', { ascending: true });
 
         if (error) throw error;
         renderCourses(courses);
     } catch (error) {
-        console.error("Erreur lors de la récupération des courses :", error);
+        console.error("Erreur courses :", error);
         coursesContainer.innerHTML = '<div class="no-courses">Erreur de chargement des données.</div>';
     }
 }
 
-// Générer le texte formaté du Bon de Commande (Modèle Exact)
+// Générer le texte formaté du Bon de Commande
 function generateMissionText(course) {
     const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
     const formattedDate = course.date ? new Date(course.date).toLocaleDateString('fr-FR', options) : 'Date inconnue';
@@ -63,6 +75,12 @@ function generateMissionText(course) {
     const creationTime = course.created_at ? new Date(course.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '21h00';
 
     const dateCapitalized = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
+
+    // Recherche dynamique du véhicule relié
+    const veh = allVehicles.find(v => v.id === course.vehicle_id);
+    const vehicleModel = veh ? veh.model : 'Mercedes Class V';
+    const vehiclePlate = veh ? veh.plate : 'Non spécifiée';
+    const vehiclePhone = veh ? veh.phone : '+33661376190';
 
     return `VOTRE MISSION - SERVICE COMMANDÉ : ${course.service_type ? course.service_type.toUpperCase() : 'VAN'}
 -------------------------
@@ -76,9 +94,9 @@ client : ${course.client_name || 'Non spécifié'}
 Tel : ${course.client_phone || ''}  (${course.passengers || 1} pax)
 
 Chauffeur : ${course.driver_name || 'Non assigné'}
-0661376190
-Mercedes Class V
-HB190LY
+${vehiclePhone}
+${vehicleModel}
+${vehiclePlate}
 
 Tarif sous-traitant : ${course.price || '0'}€ ttc PP
 
@@ -93,7 +111,7 @@ En cas de besoin : +33661376190
 Siret 90776001100029`;
 }
 
-// Fonction pour copier / partager la mission
+// Copier / partager la mission
 async function shareMission(courseId, courseData) {
     const course = JSON.parse(decodeURIComponent(courseData));
     const text = generateMissionText(course);
@@ -106,19 +124,19 @@ async function shareMission(courseId, courseData) {
             });
             return;
         } catch (err) {
-            console.log("Partage système annulé, copie classique...");
+            console.log("Partage natif ignoré.");
         }
     }
 
     try {
         await navigator.clipboard.writeText(text);
-        alert("Mission copiée dans le presse-papiers ! Vous pouvez la coller sur WhatsApp.");
+        alert("Mission copiée dans le presse-papiers !");
     } catch (err) {
         alert("Impossible de copier automatiquement.");
     }
 }
 
-// Générer l'affichage des cartes de courses
+// Générer les cartes
 function renderCourses(courses) {
     if (!coursesContainer) return;
     coursesContainer.innerHTML = '';
@@ -157,6 +175,10 @@ function renderCourses(courses) {
         const safeCourseData = encodeURIComponent(JSON.stringify(course));
         const courseDateFormated = course.date ? new Date(course.date).toLocaleDateString('fr-FR', {day: 'numeric', month: 'short'}) : 'Date inconnue';
 
+        // Afficher également le modèle et la plaque sur la carte du chauffeur
+        const assignedVeh = allVehicles.find(v => v.id === course.vehicle_id);
+        const vehicleDisplay = assignedVeh ? `${assignedVeh.model} (${assignedVeh.plate})` : 'Aucun véhicule assigné';
+
         card.innerHTML = `
             <div class="course-header">
                 <span class="course-time"><i class="fa-regular fa-calendar"></i> ${courseDateFormated} à ${course.time}</span>
@@ -171,7 +193,8 @@ function renderCourses(courses) {
             <div class="client-info">
                 <div><i class="fa-solid fa-user"></i> <strong>Client :</strong> ${course.client_name}</div>
                 <div style="margin-top:4px;"><i class="fa-solid fa-phone"></i> <a href="tel:${course.client_phone}" style="color:#38bdf8; text-decoration:none;">${course.client_phone}</a> (${course.passengers} pax)</div>
-                ${course.info ? `<div style="margin-top:6px; font-style:italic; color:#94a3b8;">Note : ${course.info}</div>` : ''}
+                <div style="margin-top:8px; color:#e2e8f0;"><i class="fa-solid fa-car"></i> <strong>Véhicule :</strong> ${vehicleDisplay}</div>
+                ${course.info ? `<div style="margin-top:8px; font-style:italic; color:#94a3b8;">Note : ${course.info}</div>` : ''}
             </div>
 
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
@@ -194,7 +217,7 @@ function renderCourses(courses) {
     });
 }
 
-// Fonction de mise à jour du statut
+// Mise à jour de statut
 async function updateCourseStatus(courseId, newStatus) {
     if (!supabaseClient) return;
     
@@ -207,28 +230,28 @@ async function updateCourseStatus(courseId, newStatus) {
     }
 
     try {
-        const { error } = await supabaseClient
-            .from('orders')
-            .update(updateData)
-            .eq('id', courseId);
-
+        const { error } = await supabaseClient.from('orders').update(updateData).eq('id', courseId);
         if (error) throw error;
         fetchDriverCourses();
     } catch (error) {
-        alert("Erreur lors de la mise à jour : " + error.message);
+        alert("Erreur mise à jour : " + error.message);
     }
 }
 
-// Écoute des changements en direct (Realtime)
-if (supabaseClient) {
-    supabaseClient
-        .channel('driver-db-changes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, payload => {
-            console.log('Changement détecté !', payload);
-            fetchDriverCourses();
-        })
-        .subscribe();
+// Lancement global
+async function init() {
+    await fetchVehicles();
+    await fetchDriverCourses();
+
+    if (supabaseClient) {
+        supabaseClient
+            .channel('driver-db-changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchDriverCourses())
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'vehicles' }, () => {
+                fetchVehicles().then(() => fetchDriverCourses());
+            })
+            .subscribe();
+    }
 }
 
-// Lancement automatique du chargement des courses pour Michel
-fetchDriverCourses();
+init();
