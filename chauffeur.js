@@ -4,7 +4,7 @@ const SUPABASE_KEY = "sb_publishable_sQLbXaT_zCNinhTaXd7Iiw_KsKIAeS2";
 
 let supabaseClient;
 
-// Initialisation ultra-robuste de Supabase
+// Initialisation de Supabase
 try {
     if (typeof window !== "undefined" && window.supabase && typeof window.supabase.createClient === "function") {
         supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -23,7 +23,7 @@ const connStatus = document.getElementById('connection-status');
 
 let currentDriver = "";
 
-// Si l'initialisation a réussi, on affiche le statut "En ligne"
+// Affichage du statut de connexion
 if (supabaseClient) {
     if (connStatus) {
         connStatus.innerHTML = '<span style="color:#10b981;">● En ligne</span>';
@@ -52,12 +52,11 @@ async function fetchDriverCourses() {
     }
 
     try {
-        // CORRECTION : Nous avons enlevé le filtre .eq('date', today) pour charger TOUTES les courses
         const { data: courses, error } = await supabaseClient
             .from('orders')
             .select('*')
             .eq('driver_name', currentDriver)
-            .order('date', { ascending: false }) // Les plus récentes en premier
+            .order('date', { ascending: false })
             .order('time', { ascending: false });
 
         if (error) throw error;
@@ -65,6 +64,76 @@ async function fetchDriverCourses() {
     } catch (error) {
         console.error("Erreur lors de la récupération des courses :", error);
         coursesContainer.innerHTML = '<div class="no-courses">Erreur de chargement des données.</div>';
+    }
+}
+
+// Générer le texte formaté du Bon de Commande (Exactement selon ton modèle)
+function generateMissionText(course) {
+    // Formatage de la date en français (ex: Dimanche 21 juin 2026)
+    const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+    const formattedDate = course.date ? new Date(course.date).toLocaleDateString('fr-FR', options) : 'Date inconnue';
+    
+    // Formatage de la date de création de la commande
+    const creationDate = course.created_at ? new Date(course.created_at).toLocaleDateString('fr-FR') : new Date().toLocaleDateString('fr-FR');
+    const creationTime = course.created_at ? new Date(course.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '21h00';
+
+    // Majuscule sur le jour de la semaine
+    const dateCapitalized = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
+
+    return `VOTRE MISSION - SERVICE COMMANDÉ : ${course.service_type ? course.service_type.toUpperCase() : 'VAN'}
+-------------------------
+Date et heure : ${dateCapitalized} à ${course.time || '--:--'}
+
+Départ : ${course.departure || 'Non spécifié'}
+
+Destination : ${course.destination || 'Non spécifiée'}
+
+client : ${course.client_name || 'Non spécifié'}
+Tel : ${course.client_phone || ''}  (${course.passengers || 1} pax)
+
+Chauffeur : ${course.driver_name || 'Non assigné'}
+0661376190
+Mercedes Class V
+HB190LY
+
+Tarif sous-traitant : ${course.price || '0'}€ ttc PP
+
+Infos : ${course.info || 'Aucune'}
+Commandé le ${creationDate} à ${creationTime}
+
+Nous vous remercions pour votre confiance.
+-------------------------
+ 
+Fernand Michel Sebag
+En cas de besoin : +33661376190
+Siret 90776001100029`;
+}
+
+// Fonction pour copier le texte dans le presse-papiers et le partager
+async function shareMission(courseId, courseData) {
+    // Reconstruction de l'objet de course depuis la chaîne JSON
+    const course = JSON.parse(decodeURIComponent(courseData));
+    const text = generateMissionText(course);
+
+    // Essayer d'utiliser le partage natif du téléphone (WhatsApp, SMS, etc.)
+    if (navigator.share) {
+        try {
+            await navigator.share({
+                title: 'Votre Mission VTC',
+                text: text
+            });
+            return;
+        } catch (err) {
+            console.log("Partage système annulé ou non disponible, copie dans le presse-papier...");
+        }
+    }
+
+    // Solution de repli : Copier dans le presse-papiers
+    try {
+        await navigator.clipboard.writeText(text);
+        alert("Mission copiée dans le presse-papiers ! Vous pouvez la coller sur WhatsApp.");
+    } catch (err) {
+        alert("Impossible de copier automatiquement. Veuillez sélectionner et copier le texte manuellement.");
     }
 }
 
@@ -104,7 +173,10 @@ function renderCourses(courses) {
             actionButtonHTML = `<div style="text-align:center; color:#10b981; font-weight:bold; font-size:14px;"><i class="fa-solid fa-circle-check"></i> Course complétée</div>`;
         }
 
-        // Formatage lisible de la date de la course
+        // Sécuriser le transfert de données d'objet dans la fonction HTML de partage
+        const safeCourseData = encodeURIComponent(JSON.stringify(course));
+
+        // Formatage de la date pour la carte
         const courseDateFormated = course.date ? new Date(course.date).toLocaleDateString('fr-FR', {day: 'numeric', month: 'short'}) : 'Date inconnue';
 
         card.innerHTML = `
@@ -127,6 +199,13 @@ function renderCourses(courses) {
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
                 <span style="color:var(--text-secondary); font-size:13px;">Service: ${course.service_type}</span>
                 <span class="course-price">${course.price} €</span>
+            </div>
+
+            <!-- NOUVEAU BOUTON : PARTAGE PROFESSIONNEL -->
+            <div style="margin-bottom: 12px;">
+                <button class="btn-action" style="background-color: #475569; color: white;" onclick="shareMission('${course.id}', '${safeCourseData}')">
+                    <i class="fa-solid fa-share-nodes"></i> Copier / Partager la Mission
+                </button>
             </div>
 
             <div class="action-container">
