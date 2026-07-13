@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion - Console Admin VTC</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .icon-header {
+            font-size: 40px;
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+
+        h2 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: var(--text);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #64748b;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .error-message {
+            color: #ef4444;
+            font-size: 13px;
+            margin-top: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <div class="icon-header">
+            <i class="fa-solid fa-user-shield"></i>
+        </div>
+        <h2>Accès Administration VTC</h2>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="password">Mot de passe d'accès</label>
+                <input type="password" id="password" placeholder="Entrez le mot de passe" required>
+            </div>
+            <button type="submit">Se connecter</button>
+            <div id="errorMessage" class="error-message">Mot de passe incorrect. Réessayez.</div>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const passwordInput = document.getElementById('password').value;
+            const errorMsg = document.getElementById('errorMessage');
+
+            // --- ICI, CHOISIS TON MOT DE PASSE ---
+            const MOT_DE_PASSE_SECRET = "300407Joshua@@"; 
+
+            if (passwordInput === MOT_DE_PASSE_SECRET) {
+                // On stocke une clé temporaire de connexion dans le navigateur (valable pour la session actuelle)
+                sessionStorage.setItem('admin_connected', 'true');
+                // Redirection vers la console d'administration
+                window.location.href = 'admin.html';
+            } else {
+                errorMsg.style.display = 'block';
+                document.getElementById('password').value = '';
+            }
+        });
+    </script>
+
+</body>
+</html>
