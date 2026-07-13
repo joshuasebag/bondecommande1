@@ -174,7 +174,31 @@
             font-size: 20px;
         }
 
-        /* --- FORMULAIRE MODERNISÉ --- */
+        /* --- STATS CARDS --- */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-box {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            padding: 16px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .stat-value {
+            font-size: 22px;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        /* --- FORMULAIRE --- */
         .form-group {
             margin-bottom: 20px;
             position: relative;
@@ -271,7 +295,7 @@
             color: var(--primary);
         }
 
-        /* --- TABLEAU DE SUIVI LUXE --- */
+        /* --- TABLEAU DE SUIVI --- */
         .table-container {
             overflow-x: auto;
             border-radius: 8px;
@@ -554,9 +578,24 @@
                 </div>
             </div>
 
-            <!-- COLONNE DE DROITE : TABLES DE SUIVI ET DE VÉHICULES -->
+            <!-- COLONNE DE DROITE : TABLES DE SUIVI, DE VÉHICULES ET DU CA -->
             <div class="right-column">
                 
+                <!-- NOUVELLE CARTE : REVENUS & CHIFFRE D'AFFAIRES DU MOIS EN COURS -->
+                <div class="card">
+                    <div class="card-title">
+                        <i class="fa-solid fa-chart-line" style="color: var(--primary);"></i>
+                        Chiffre d'Affaires du Mois en Cours
+                    </div>
+                    <div class="stats-grid" id="driverStatsContainer">
+                        <!-- Généré dynamiquement en JS (Michel, Chauffeur 2, etc.) -->
+                        <div class="stat-box">
+                            <span style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Initialisation...</span>
+                            <span class="stat-value">0,00 €</span>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- TABLEAU DE SUIVI DES COURSES -->
                 <div class="card">
                     <div class="card-title">
