@@ -17,11 +17,11 @@ try {
     console.error("Erreur d'initialisation Supabase :", err);
 }
 
-const driverSelect = document.getElementById('driverSelect');
 const coursesContainer = document.getElementById('coursesContainer');
 const connStatus = document.getElementById('connection-status');
 
-let currentDriver = "";
+// VERROUILLAGE DIRECT SUR MICHEL (Pas besoin de choix)
+const currentDriver = "Michel";
 
 // Affichage du statut de connexion
 if (supabaseClient) {
@@ -34,30 +34,17 @@ if (supabaseClient) {
     }
 }
 
-// Écouteur de changement de chauffeur
-if (driverSelect) {
-    driverSelect.addEventListener('change', (e) => {
-        currentDriver = e.target.value;
-        fetchDriverCourses();
-    });
-}
-
-// Charger l'ensemble des courses du chauffeur sélectionné
+// Charger l'ensemble des courses de Michel
 async function fetchDriverCourses() {
     if (!supabaseClient) return;
-
-    if (!currentDriver) {
-        coursesContainer.innerHTML = '<div class="no-courses">Veuillez sélectionner un profil de chauffeur pour voir vos courses.</div>';
-        return;
-    }
 
     try {
         const { data: courses, error } = await supabaseClient
             .from('orders')
             .select('*')
             .eq('driver_name', currentDriver)
-            .order('date', { ascending: false })
-            .order('time', { ascending: false });
+            .order('date', { ascending: true }) // Du plus proche au plus lointain
+            .order('time', { ascending: true });
 
         if (error) throw error;
         renderCourses(courses);
@@ -67,17 +54,14 @@ async function fetchDriverCourses() {
     }
 }
 
-// Générer le texte formaté du Bon de Commande (Exactement selon ton modèle)
+// Générer le texte formaté du Bon de Commande (Modèle Exact)
 function generateMissionText(course) {
-    // Formatage de la date en français (ex: Dimanche 21 juin 2026)
     const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
     const formattedDate = course.date ? new Date(course.date).toLocaleDateString('fr-FR', options) : 'Date inconnue';
     
-    // Formatage de la date de création de la commande
     const creationDate = course.created_at ? new Date(course.created_at).toLocaleDateString('fr-FR') : new Date().toLocaleDateString('fr-FR');
     const creationTime = course.created_at ? new Date(course.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '21h00';
 
-    // Majuscule sur le jour de la semaine
     const dateCapitalized = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
 
     return `VOTRE MISSION - SERVICE COMMANDÉ : ${course.service_type ? course.service_type.toUpperCase() : 'VAN'}
@@ -109,13 +93,11 @@ En cas de besoin : +33661376190
 Siret 90776001100029`;
 }
 
-// Fonction pour copier le texte dans le presse-papiers et le partager
+// Fonction pour copier / partager la mission
 async function shareMission(courseId, courseData) {
-    // Reconstruction de l'objet de course depuis la chaîne JSON
     const course = JSON.parse(decodeURIComponent(courseData));
     const text = generateMissionText(course);
 
-    // Essayer d'utiliser le partage natif du téléphone (WhatsApp, SMS, etc.)
     if (navigator.share) {
         try {
             await navigator.share({
@@ -124,16 +106,15 @@ async function shareMission(courseId, courseData) {
             });
             return;
         } catch (err) {
-            console.log("Partage système annulé ou non disponible, copie dans le presse-papier...");
+            console.log("Partage système annulé, copie classique...");
         }
     }
 
-    // Solution de repli : Copier dans le presse-papiers
     try {
         await navigator.clipboard.writeText(text);
         alert("Mission copiée dans le presse-papiers ! Vous pouvez la coller sur WhatsApp.");
     } catch (err) {
-        alert("Impossible de copier automatiquement. Veuillez sélectionner et copier le texte manuellement.");
+        alert("Impossible de copier automatiquement.");
     }
 }
 
@@ -143,7 +124,7 @@ function renderCourses(courses) {
     coursesContainer.innerHTML = '';
 
     if (!courses || courses.length === 0) {
-        coursesContainer.innerHTML = '<div class="no-courses">Aucune course enregistrée pour ce chauffeur.</div>';
+        coursesContainer.innerHTML = '<div class="no-courses">Aucune course enregistrée pour Michel.</div>';
         return;
     }
 
@@ -173,10 +154,7 @@ function renderCourses(courses) {
             actionButtonHTML = `<div style="text-align:center; color:#10b981; font-weight:bold; font-size:14px;"><i class="fa-solid fa-circle-check"></i> Course complétée</div>`;
         }
 
-        // Sécuriser le transfert de données d'objet dans la fonction HTML de partage
         const safeCourseData = encodeURIComponent(JSON.stringify(course));
-
-        // Formatage de la date pour la carte
         const courseDateFormated = course.date ? new Date(course.date).toLocaleDateString('fr-FR', {day: 'numeric', month: 'short'}) : 'Date inconnue';
 
         card.innerHTML = `
@@ -201,7 +179,6 @@ function renderCourses(courses) {
                 <span class="course-price">${course.price} €</span>
             </div>
 
-            <!-- NOUVEAU BOUTON : PARTAGE PROFESSIONNEL -->
             <div style="margin-bottom: 12px;">
                 <button class="btn-action" style="background-color: #475569; color: white;" onclick="shareMission('${course.id}', '${safeCourseData}')">
                     <i class="fa-solid fa-share-nodes"></i> Copier / Partager la Mission
@@ -217,7 +194,7 @@ function renderCourses(courses) {
     });
 }
 
-// Fonction pour mettre à jour le statut en base de données
+// Fonction de mise à jour du statut
 async function updateCourseStatus(courseId, newStatus) {
     if (!supabaseClient) return;
     
@@ -236,7 +213,7 @@ async function updateCourseStatus(courseId, newStatus) {
             .eq('id', courseId);
 
         if (error) throw error;
-        fetchDriverCourses(); // Recharger la liste locale
+        fetchDriverCourses();
     } catch (error) {
         alert("Erreur lors de la mise à jour : " + error.message);
     }
@@ -252,3 +229,6 @@ if (supabaseClient) {
         })
         .subscribe();
 }
+
+// Lancement automatique du chargement des courses pour Michel
+fetchDriverCourses();
