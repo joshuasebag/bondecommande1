@@ -183,25 +183,31 @@ function calculateDriverStats() {
     const statsContainer = document.getElementById('driverStatsContainer');
     if (!statsContainer) return;
 
-    // Obtenir l'année et le mois en cours
     const currentDate = new Date();
+    
+    // Obtenir l'année et le mois sous forme de texte (ex: "2026-07")
     const currentYear = currentDate.getFullYear();
-    const currentMonth = currentDate.getMonth(); // 0 = Janvier, 6 = Juillet, etc.
+    const currentMonthNum = String(currentDate.getMonth() + 1).padStart(2, '0'); // Janvier = "01", Juillet = "07"
+    const currentYearMonthStr = `${currentYear}-${currentMonthNum}`; // Résultat : "2026-07"
 
-    // Objet pour stocker les calculs { "Michel": 150, "Chauffeur 2": 80 }
-    const driverEarnings = {};
+    // Objet de calcul temporaire
+    const driverEarnings = {
+        "Michel": 0,
+        "Chauffeur 2": 0
+    };
 
     globalOrders.forEach(order => {
-        // On ne compte que les courses validées (déposé)
+        // Condition stricte : Le statut de la course doit être "depose" (Terminé)
         if (order.status === 'depose' && order.date) {
-            const orderDate = new Date(order.date);
-            
-            // Vérifier si la course appartient au mois et à l'année en cours
-            if (orderDate.getFullYear() === currentYear && orderDate.getMonth() === currentMonth) {
+            // Découper la date Supabase "2026-07-13" pour récupérer uniquement "2026-07"
+            const orderYearMonth = order.date.substring(0, 7);
+
+            // Si le mois de la course correspond au mois en cours
+            if (orderYearMonth === currentYearMonthStr) {
                 const driver = order.driver_name || "Non assigné";
                 const price = parseFloat(order.price) || 0;
 
-                if (!driverEarnings[driver]) {
+                if (driverEarnings[driver] === undefined) {
                     driverEarnings[driver] = 0;
                 }
                 driverEarnings[driver] += price;
@@ -209,18 +215,9 @@ function calculateDriverStats() {
         }
     });
 
-    // Liste des chauffeurs connus à afficher par défaut s'ils n'ont pas encore fait de courses ce mois-ci
-    const defaultDrivers = ["Michel", "Chauffeur 2"];
-    defaultDrivers.forEach(d => {
-        if (driverEarnings[d] === undefined) {
-            driverEarnings[d] = 0;
-        }
-    });
-
     // Générer le HTML des cartes de CA
     statsContainer.innerHTML = '';
     
-    // Formater le nom du mois en français
     const monthName = currentDate.toLocaleDateString('fr-FR', { month: 'long' });
     const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
 
@@ -252,7 +249,6 @@ function generateMissionText(order) {
 
     const dateCapitalized = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
 
-    // Chercher les informations réelles du véhicule assigné
     const veh = allVehicles.find(v => v.id === order.vehicle_id);
     const vehicleModel = veh ? veh.model : 'Mercedes Class V';
     const vehiclePlate = veh ? veh.plate : 'Non spécifiée';
@@ -327,7 +323,7 @@ const fetchAndDisplayOrders = async () => {
         if (error) throw error;
 
         globalOrders = orders || [];
-        calculateDriverStats(); // Mettre à jour les indicateurs de CA
+        calculateDriverStats(); // Mettre à jour les indicateurs de CA dès que les données changent
 
         const tbody = document.getElementById('ordersTableBody');
         if (!tbody) return;
