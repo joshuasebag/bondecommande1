@@ -2,8 +2,20 @@
 const SUPABASE_URL = "https://vvdfxcnxzwcidxtzqfgx.supabase.co"; 
 const SUPABASE_KEY = "sb_publishable_sQLbXaT_zCNinhTaXd7Iiw_KsKIAeS2";
 
-// CORRECTION ICI : Utilisation de la méthode globale pour éviter le conflit de nom
-const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let supabaseClient;
+
+// Initialisation ultra-robuste de Supabase
+try {
+    if (typeof window !== "undefined" && window.supabase && typeof window.supabase.createClient === "function") {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    } else if (typeof supabase !== "undefined" && typeof supabase.createClient === "function") {
+        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    } else {
+        throw new Error("La bibliothèque Supabase n'est pas encore chargée dans le navigateur.");
+    }
+} catch (err) {
+    console.error("Erreur d'initialisation Supabase :", err);
+}
 
 const driverSelect = document.getElementById('driverSelect');
 const coursesContainer = document.getElementById('coursesContainer');
@@ -11,9 +23,15 @@ const connStatus = document.getElementById('connection-status');
 
 let currentDriver = "";
 
-// Mettre à jour l'état de la connexion visuelle
-if (connStatus) {
-    connStatus.innerHTML = '<span style="color:#10b981;">● En ligne</span>';
+// Si l'initialisation a réussi, on affiche le statut "En ligne"
+if (supabaseClient) {
+    if (connStatus) {
+        connStatus.innerHTML = '<span style="color:#10b981;">● En ligne</span>';
+    }
+} else {
+    if (connStatus) {
+        connStatus.innerHTML = '<span style="color:#ef4444;">● Erreur de chargement SDK</span>';
+    }
 }
 
 // Écouteur de changement de chauffeur
@@ -24,37 +42,39 @@ if (driverSelect) {
     });
 }
 
-// Charger les courses du chauffeur sélectionné
+// Charger l'ensemble des courses du chauffeur sélectionné
 async function fetchDriverCourses() {
+    if (!supabaseClient) return;
+
     if (!currentDriver) {
         coursesContainer.innerHTML = '<div class="no-courses">Veuillez sélectionner un profil de chauffeur pour voir vos courses.</div>';
         return;
     }
 
-    const today = new Date().toISOString().split('T')[0];
+    try {
+        // CORRECTION : Nous avons enlevé le filtre .eq('date', today) pour charger TOUTES les courses
+        const { data: courses, error } = await supabaseClient
+            .from('orders')
+            .select('*')
+            .eq('driver_name', currentDriver)
+            .order('date', { ascending: false }) // Les plus récentes en premier
+            .order('time', { ascending: false });
 
-    const { data: courses, error } = await supabaseClient
-        .from('orders')
-        .select('*')
-        .eq('driver_name', currentDriver)
-        .eq('date', today)
-        .order('time', { ascending: true });
-
-    if (error) {
-        console.error(error);
-        coursesContainer.innerHTML = '<div class="no-courses">Erreur de chargement.</div>';
-        return;
+        if (error) throw error;
+        renderCourses(courses);
+    } catch (error) {
+        console.error("Erreur lors de la récupération des courses :", error);
+        coursesContainer.innerHTML = '<div class="no-courses">Erreur de chargement des données.</div>';
     }
-
-    renderCourses(courses);
 }
 
 // Générer l'affichage des cartes de courses
 function renderCourses(courses) {
+    if (!coursesContainer) return;
     coursesContainer.innerHTML = '';
 
-    if (courses.length === 0) {
-        coursesContainer.innerHTML = '<div class="no-courses">Aucune course prévue pour aujourd\'hui.</div>';
+    if (!courses || courses.length === 0) {
+        coursesContainer.innerHTML = '<div class="no-courses">Aucune course enregistrée pour ce chauffeur.</div>';
         return;
     }
 
@@ -84,9 +104,12 @@ function renderCourses(courses) {
             actionButtonHTML = `<div style="text-align:center; color:#10b981; font-weight:bold; font-size:14px;"><i class="fa-solid fa-circle-check"></i> Course complétée</div>`;
         }
 
+        // Formatage lisible de la date de la course
+        const courseDateFormated = course.date ? new Date(course.date).toLocaleDateString('fr-FR', {day: 'numeric', month: 'short'}) : 'Date inconnue';
+
         card.innerHTML = `
             <div class="course-header">
-                <span class="course-time"><i class="fa-regular fa-clock"></i> ${course.time}</span>
+                <span class="course-time"><i class="fa-regular fa-calendar"></i> ${courseDateFormated} à ${course.time}</span>
                 ${badgeHTML}
             </div>
             
@@ -117,6 +140,8 @@ function renderCourses(courses) {
 
 // Fonction pour mettre à jour le statut en base de données
 async function updateCourseStatus(courseId, newStatus) {
+    if (!supabaseClient) return;
+    
     const updateData = { status: newStatus };
 
     if (newStatus === 'charge') {
@@ -125,23 +150,26 @@ async function updateCourseStatus(courseId, newStatus) {
         updateData.dropoff_time = new Date().toISOString();
     }
 
-    const { error } = await supabaseClient
-        .from('orders')
-        .update(updateData)
-        .eq('id', courseId);
+    try {
+        const { error } = await supabaseClient
+            .from('orders')
+            .update(updateData)
+            .eq('id', courseId);
 
-    if (error) {
-        alert("Erreur lors de la mise à jour : " + error.message);
-    } else {
+        if (error) throw error;
         fetchDriverCourses(); // Recharger la liste locale
+    } catch (error) {
+        alert("Erreur lors de la mise à jour : " + error.message);
     }
 }
 
 // Écoute des changements en direct (Realtime)
-supabaseClient
-    .channel('driver-db-changes')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, payload => {
-        console.log('Changement détecté !', payload);
-        fetchDriverCourses();
-    })
-    .subscribe();
+if (supabaseClient) {
+    supabaseClient
+        .channel('driver-db-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, payload => {
+            console.log('Changement détecté !', payload);
+            fetchDriverCourses();
+        })
+        .subscribe();
+}
