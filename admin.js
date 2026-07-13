@@ -11,11 +11,14 @@ try {
     } else if (typeof supabase !== "undefined" && typeof supabase.createClient === "function") {
         supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     } else {
-        throw new Error("La bibliothèque Supabase n'est pas encore chargée dans le navigateur.");
+        throw new Error("La bibliothèque Supabase n'est pas encore chargée.");
     }
 } catch (err) {
-    console.error("Erreur d'initialisation Supabase dans admin.js :", err);
+    console.error("Erreur Supabase :", err);
 }
+
+// Variables globales de stockage
+let allVehicles = [];
 
 // --- AUTOCOMPLÉTION DES ADRESSES ---
 const setupAutocomplete = (inputId, suggestionsId) => {
@@ -63,14 +66,118 @@ const setupAutocomplete = (inputId, suggestionsId) => {
     });
 };
 
-// Configurer l'autocomplétion sur la création ET la modification
 setupAutocomplete('departure', 'departure-suggestions');
 setupAutocomplete('destination', 'destination-suggestions');
 setupAutocomplete('editDeparture', 'editDeparture-suggestions');
 setupAutocomplete('editDestination', 'editDestination-suggestions');
 
 
-// --- GÉNÉRER LE TEXTE FORMATÉ DU BON DE COMMANDE ---
+// --- RÉCUPÉRER ET SYNCHRONISER LA LISTE DES VÉHICULES ---
+const fetchVehicles = async () => {
+    if (!supabaseClient) return;
+    try {
+        const { data, error } = await supabaseClient
+            .from('vehicles')
+            .select('*')
+            .order('model', { ascending: true });
+
+        if (error) throw error;
+        allVehicles = data || [];
+        
+        renderVehiclesList();
+        populateVehicleDropdowns();
+    } catch (err) {
+        console.error("Erreur lors de la lecture des véhicules :", err);
+    }
+};
+
+// Afficher les véhicules dans la table de gestion de la flotte
+function renderVehiclesList() {
+    const tbody = document.getElementById('vehiclesTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    if (allVehicles.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 15px;">Aucun véhicule dans la flotte.</td></tr>`;
+        return;
+    }
+
+    allVehicles.forEach(veh => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><strong>${veh.model}</strong></td>
+            <td><code style="background:#f1f5f9; padding:2px 6px; border-radius:4px; font-weight:bold;">${veh.plate}</code></td>
+            <td>${veh.phone}</td>
+            <td>
+                <button class="action-icon action-delete" onclick="deleteVehicle('${veh.id}')" title="Supprimer le véhicule">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// Remplir les menus déroulants
+function populateVehicleDropdowns() {
+    const createSelect = document.getElementById('assignedVehicle');
+    const editSelect = document.getElementById('editAssignedVehicle');
+
+    const generateOptionsHTML = () => {
+        let html = '<option value="">-- Sélectionner un véhicule --</option>';
+        allVehicles.forEach(veh => {
+            html += `<option value="${veh.id}">${veh.model} (${veh.plate})</option>`;
+        });
+        return html;
+    };
+
+    if (createSelect) createSelect.innerHTML = generateOptionsHTML();
+    if (editSelect) editSelect.innerHTML = generateOptionsHTML();
+}
+
+// Supprimer un véhicule de la flotte
+async function deleteVehicle(vehId) {
+    if (!supabaseClient) return;
+    if (!confirm("Voulez-vous supprimer ce véhicule de la flotte ?")) return;
+
+    try {
+        const { error } = await supabaseClient.from('vehicles').delete().eq('id', vehId);
+        if (error) throw error;
+        fetchVehicles();
+    } catch (err) {
+        alert("Erreur de suppression du véhicule : " + err.message);
+    }
+}
+
+
+// --- ENREGISTRER UN NOUVEAU VÉHICULE ---
+const vehicleForm = document.getElementById('vehicleForm');
+if (vehicleForm) {
+    vehicleForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!supabaseClient) return;
+
+        const newVeh = {
+            model: document.getElementById('vehicleModel').value,
+            plate: document.getElementById('vehiclePlate').value.toUpperCase(),
+            phone: document.getElementById('vehiclePhone').value
+        };
+
+        try {
+            const { error } = await supabaseClient.from('vehicles').insert([newVeh]);
+            if (error) throw error;
+
+            alert("Véhicule ajouté avec succès !");
+            vehicleForm.reset();
+            fetchVehicles();
+        } catch (err) {
+            alert("Erreur de création du véhicule : " + err.message);
+        }
+    });
+}
+
+
+// --- GÉNÉRER LE TEXTE DU BON DE COMMANDE AVEC LE VÉHICULE ASSOCIÉ ---
 function generateMissionText(order) {
     const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
     const formattedDate = order.date ? new Date(order.date).toLocaleDateString('fr-FR', options) : 'Date inconnue';
@@ -79,6 +186,12 @@ function generateMissionText(order) {
     const creationTime = order.created_at ? new Date(order.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '21h00';
 
     const dateCapitalized = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
+
+    // Chercher les informations réelles du véhicule assigné
+    const veh = allVehicles.find(v => v.id === order.vehicle_id);
+    const vehicleModel = veh ? veh.model : 'Mercedes Class V';
+    const vehiclePlate = veh ? veh.plate : 'Non spécifiée';
+    const vehiclePhone = veh ? veh.phone : '+33661376190';
 
     return `VOTRE MISSION - SERVICE COMMANDÉ : ${order.service_type ? order.service_type.toUpperCase() : 'VAN'}
 -------------------------
@@ -92,9 +205,9 @@ client : ${order.client_name || 'Non spécifié'}
 Tel : ${order.client_phone || ''}  (${order.passengers || 1} pax)
 
 Chauffeur : ${order.driver_name || 'Non assigné'}
-0661376190
-Mercedes Class V
-HB190LY
+${vehiclePhone}
+${vehicleModel}
+${vehiclePlate}
 
 Tarif sous-traitant : ${order.price || '0'}€ ttc PP
 
@@ -109,7 +222,7 @@ En cas de besoin : +33661376190
 Siret 90776001100029`;
 }
 
-// --- COPIER / PARTAGER LA MISSION ---
+// Partager la mission
 async function shareMissionFromAdmin(orderData) {
     const order = JSON.parse(decodeURIComponent(orderData));
     const text = generateMissionText(order);
@@ -122,20 +235,20 @@ async function shareMissionFromAdmin(orderData) {
             });
             return;
         } catch (err) {
-            console.log("Partage annulé ou non disponible.");
+            console.log("Partage non supporté.");
         }
     }
 
     try {
         await navigator.clipboard.writeText(text);
-        alert("Bon de commande formaté copié dans le presse-papiers !");
+        alert("Bon de commande copié avec succès !");
     } catch (err) {
-        alert("Échec de la copie automatique.");
+        alert("Échec de la copie.");
     }
 }
 
 
-// --- RÉCUPÉRATION ET AFFICHAGE DES COURSES ---
+// --- RECUPÉRATION ET AFFICHAGE DES COMMANDES ---
 const fetchAndDisplayOrders = async () => {
     if (!supabaseClient) return;
 
@@ -172,16 +285,21 @@ const fetchAndDisplayOrders = async () => {
             }
 
             const safeOrderData = encodeURIComponent(JSON.stringify(order));
-
-            // Formatage propre de la date pour le tableau
             const dateFormatted = order.date ? new Date(order.date).toLocaleDateString('fr-FR', {day: '2-digit', month: '2-digit'}) : '--/--';
+
+            // Chercher le modèle du véhicule associé pour l'afficher sur le tableau
+            const linkedVehicle = allVehicles.find(v => v.id === order.vehicle_id);
+            const vehicleText = linkedVehicle ? `${linkedVehicle.model} [${linkedVehicle.plate}]` : '<span style="color:#ef4444;">Aucun véhicule</span>';
 
             tr.innerHTML = `
                 <td><strong>${dateFormatted}</strong> à ${order.time}</td>
-                <td><i class="fa-solid fa-user-tie" style="color: var(--primary); margin-right: 4px;"></i> ${order.driver_name || 'Non assigné'}</td>
                 <td>
-                    <div style="font-size:12px; font-weight: 500; color: var(--text-main);"><i class="fa-solid fa-circle" style="color:var(--primary); font-size:8px; margin-right:4px;"></i> ${order.departure}</div>
-                    <div style="font-size:12px; font-weight: 500; color: var(--text-main); margin-top: 4px;"><i class="fa-solid fa-location-dot" style="color:var(--danger); font-size:9px; margin-right:4px;"></i> ${order.destination}</div>
+                    <div style="font-weight: 600;"><i class="fa-solid fa-user-tie" style="color: var(--primary);"></i> ${order.driver_name || 'Non assigné'}</div>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top:3px;"><i class="fa-solid fa-car"></i> ${vehicleText}</div>
+                </td>
+                <td>
+                    <div style="font-size:12px; font-weight: 500;"><i class="fa-solid fa-circle" style="color:var(--primary); font-size:8px; margin-right:4px;"></i> ${order.departure}</div>
+                    <div style="font-size:12px; font-weight: 500; margin-top: 4px;"><i class="fa-solid fa-location-dot" style="color:var(--danger); font-size:9px; margin-right:4px;"></i> ${order.destination}</div>
                 </td>
                 <td>
                     <strong>${order.client_name}</strong>
@@ -190,15 +308,12 @@ const fetchAndDisplayOrders = async () => {
                 <td><span class="badge ${badgeClass}">${statusLabel}</span></td>
                 <td>
                     <div class="action-btn-row">
-                        <!-- COPIER / PARTAGER -->
                         <button class="action-icon action-share" onclick="shareMissionFromAdmin('${safeOrderData}')" title="Copier/Partager">
                             <i class="fa-solid fa-share-nodes"></i>
                         </button>
-                        <!-- MODIFIER -->
                         <button class="action-icon action-edit" onclick="openEditModal('${safeOrderData}')" title="Modifier">
                             <i class="fa-solid fa-pen"></i>
                         </button>
-                        <!-- SUPPRIMER -->
                         <button class="action-icon action-delete" onclick="deleteOrder('${order.id}')" title="Supprimer">
                             <i class="fa-solid fa-trash-can"></i>
                         </button>
@@ -208,7 +323,7 @@ const fetchAndDisplayOrders = async () => {
             tbody.appendChild(tr);
         });
     } catch (error) {
-        console.error("Erreur de récupération :", error);
+        console.error("Erreur chargement orders :", error);
     }
 };
 
@@ -216,31 +331,24 @@ const fetchAndDisplayOrders = async () => {
 // --- SUPPRIMER UNE COURSE ---
 async function deleteOrder(orderId) {
     if (!supabaseClient) return;
-    
-    const confirmDelete = confirm("Êtes-vous sûr de vouloir supprimer définitivement cette course ?");
-    if (!confirmDelete) return;
+    if (!confirm("Voulez-vous supprimer définitivement cette course ?")) return;
 
     try {
-        const { error } = await supabaseClient
-            .from('orders')
-            .delete()
-            .eq('id', orderId);
-
+        const { error } = await supabaseClient.from('orders').delete().eq('id', orderId);
         if (error) throw error;
         fetchAndDisplayOrders();
     } catch (error) {
-        alert("Erreur de suppression : " + error.message);
+        alert("Erreur suppression : " + error.message);
     }
 }
 
 
-// --- GESTION DU POP-UP DE MODIFICATION (MODAL) ---
+// --- GESTION DU MODAL DE MODIFICATION ---
 const editModal = document.getElementById('editModal');
 
 function openEditModal(orderData) {
     const order = JSON.parse(decodeURIComponent(orderData));
 
-    // Remplir les champs du pop-up avec les valeurs existantes
     document.getElementById('editOrderId').value = order.id;
     document.getElementById('editServiceType').value = order.service_type || 'Transfert';
     document.getElementById('editPrice').value = order.price || 0;
@@ -251,11 +359,11 @@ function openEditModal(orderData) {
     document.getElementById('editClientName').value = order.client_name || '';
     document.getElementById('editClientPhone').value = order.client_phone || '';
     document.getElementById('editPassengers').value = order.passengers || 1;
-    document.getElementById('editAssignedDriver').value = order.driver_name || '';
+    document.getElementById('editAssignedDriver').value = order.driver_name || 'Michel';
+    document.getElementById('editAssignedVehicle').value = order.vehicle_id || '';
     document.getElementById('editStatus').value = order.status || 'attente';
     document.getElementById('editInfo').value = order.info || '';
 
-    // Afficher le modal
     editModal.style.display = 'flex';
 }
 
@@ -263,14 +371,13 @@ function closeEditModal() {
     editModal.style.display = 'none';
 }
 
-// Fermer si clic en dehors du formulaire
 window.onclick = function(event) {
     if (event.target == editModal) {
         closeEditModal();
     }
 }
 
-// Soumission des modifications
+// Soumission de l'édition
 const editOrderForm = document.getElementById('editOrderForm');
 if (editOrderForm) {
     editOrderForm.addEventListener('submit', async (e) => {
@@ -289,6 +396,7 @@ if (editOrderForm) {
             client_phone: document.getElementById('editClientPhone').value,
             passengers: parseInt(document.getElementById('editPassengers').value),
             driver_name: document.getElementById('editAssignedDriver').value,
+            vehicle_id: document.getElementById('editAssignedVehicle').value || null,
             status: document.getElementById('editStatus').value,
             info: document.getElementById('editInfo').value
         };
@@ -301,17 +409,17 @@ if (editOrderForm) {
 
             if (error) throw error;
 
-            alert("Course mise à jour avec succès !");
+            alert("Course mise à jour !");
             closeEditModal();
             fetchAndDisplayOrders();
         } catch (error) {
-            alert("Erreur lors de la mise à jour : " + error.message);
+            alert("Erreur mise à jour : " + error.message);
         }
     });
 }
 
 
-// --- SOUMISSION DU FORMULAIRE (CRÉATION DE COURSE) ---
+// --- SOUMISSION DE CRÉATION DE COURSE ---
 const orderForm = document.getElementById('orderForm');
 if (orderForm) {
     orderForm.addEventListener('submit', async (e) => {
@@ -329,37 +437,39 @@ if (orderForm) {
             client_phone: document.getElementById('clientPhone').value,
             passengers: parseInt(document.getElementById('passengers').value),
             driver_name: document.getElementById('assignedDriver').value,
+            vehicle_id: document.getElementById('assignedVehicle').value || null,
             info: document.getElementById('info').value,
             status: 'attente'
         };
 
         try {
-            const { error } = await supabaseClient
-                .from('orders')
-                .insert([newOrder]);
-
+            const { error } = await supabaseClient.from('orders').insert([newOrder]);
             if (error) throw error;
 
-            alert("Bon de commande envoyé avec succès !");
+            alert("Bon de commande envoyé !");
             orderForm.reset();
             fetchAndDisplayOrders();
         } catch (error) {
-            alert("Erreur lors de la création de la course : " + error.message);
+            alert("Erreur création : " + error.message);
         }
     });
 }
 
 
-// --- ABONNEMENT TEMPS RÉEL (REALTIME) ---
-if (supabaseClient) {
-    supabaseClient
-        .channel('schema-db-changes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, payload => {
-            console.log('Changement détecté en temps réel !', payload);
-            fetchAndDisplayOrders();
-        })
-        .subscribe();
-}
+// --- INITIALISATION & TEMPS RÉEL ---
+const init = async () => {
+    await fetchVehicles(); // Charger les véhicules en premier
+    await fetchAndDisplayOrders(); // Charger les courses ensuite
 
-// Premier chargement au lancement de la page
-fetchAndDisplayOrders();
+    if (supabaseClient) {
+        supabaseClient
+            .channel('db-changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchAndDisplayOrders())
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'vehicles' }, () => {
+                fetchVehicles().then(() => fetchAndDisplayOrders());
+            })
+            .subscribe();
+    }
+};
+
+init();
