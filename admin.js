@@ -19,6 +19,7 @@ try {
 
 // Variables globales de stockage
 let allVehicles = [];
+let globalOrders = [];
 
 // --- AUTOCOMPLÉTION DES ADRESSES ---
 const setupAutocomplete = (inputId, suggestionsId) => {
@@ -177,7 +178,71 @@ if (vehicleForm) {
 }
 
 
-// --- GÉNÉRER LE TEXTE DU BON DE COMMANDE AVEC LE VÉHICULE ASSOCIÉ ---
+// --- CALCULER ET AFFICHER LE CA MENSUEL DES CHAUFFEURS ---
+function calculateDriverStats() {
+    const statsContainer = document.getElementById('driverStatsContainer');
+    if (!statsContainer) return;
+
+    // Obtenir l'année et le mois en cours
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth(); // 0 = Janvier, 6 = Juillet, etc.
+
+    // Objet pour stocker les calculs { "Michel": 150, "Chauffeur 2": 80 }
+    const driverEarnings = {};
+
+    globalOrders.forEach(order => {
+        // On ne compte que les courses validées (déposé)
+        if (order.status === 'depose' && order.date) {
+            const orderDate = new Date(order.date);
+            
+            // Vérifier si la course appartient au mois et à l'année en cours
+            if (orderDate.getFullYear() === currentYear && orderDate.getMonth() === currentMonth) {
+                const driver = order.driver_name || "Non assigné";
+                const price = parseFloat(order.price) || 0;
+
+                if (!driverEarnings[driver]) {
+                    driverEarnings[driver] = 0;
+                }
+                driverEarnings[driver] += price;
+            }
+        }
+    });
+
+    // Liste des chauffeurs connus à afficher par défaut s'ils n'ont pas encore fait de courses ce mois-ci
+    const defaultDrivers = ["Michel", "Chauffeur 2"];
+    defaultDrivers.forEach(d => {
+        if (driverEarnings[d] === undefined) {
+            driverEarnings[d] = 0;
+        }
+    });
+
+    // Générer le HTML des cartes de CA
+    statsContainer.innerHTML = '';
+    
+    // Formater le nom du mois en français
+    const monthName = currentDate.toLocaleDateString('fr-FR', { month: 'long' });
+    const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+
+    Object.keys(driverEarnings).forEach(driver => {
+        const earnings = driverEarnings[driver];
+        
+        const statBox = document.createElement('div');
+        statBox.className = 'stat-box';
+        statBox.innerHTML = `
+            <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">
+                ${driver} (${capitalizedMonth})
+            </span>
+            <span class="stat-value" style="color: ${earnings > 0 ? 'var(--success)' : 'var(--text-muted)'}">
+                ${earnings.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+            </span>
+        `;
+        statsContainer.appendChild(statBox);
+    });
+}
+
+
+// --- GÉNÉRER LE TEXTE DU BON DE COMMANDE ---
 function generateMissionText(order) {
     const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
     const formattedDate = order.date ? new Date(order.date).toLocaleDateString('fr-FR', options) : 'Date inconnue';
@@ -261,6 +326,9 @@ const fetchAndDisplayOrders = async () => {
 
         if (error) throw error;
 
+        globalOrders = orders || [];
+        calculateDriverStats(); // Mettre à jour les indicateurs de CA
+
         const tbody = document.getElementById('ordersTableBody');
         if (!tbody) return;
         
@@ -287,7 +355,6 @@ const fetchAndDisplayOrders = async () => {
             const safeOrderData = encodeURIComponent(JSON.stringify(order));
             const dateFormatted = order.date ? new Date(order.date).toLocaleDateString('fr-FR', {day: '2-digit', month: '2-digit'}) : '--/--';
 
-            // Chercher le modèle du véhicule associé pour l'afficher sur le tableau
             const linkedVehicle = allVehicles.find(v => v.id === order.vehicle_id);
             const vehicleText = linkedVehicle ? `${linkedVehicle.model} [${linkedVehicle.plate}]` : '<span style="color:#ef4444;">Aucun véhicule</span>';
 
