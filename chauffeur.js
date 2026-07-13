@@ -2,7 +2,8 @@
 const SUPABASE_URL = "https://vvdfxcnxzwcidxtzqfgx.supabase.co"; 
 const SUPABASE_KEY = "sb_publishable_sQLbXaT_zCNinhTaXd7Iiw_KsKIAeS2";
 
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// CORRECTION ICI : Utilisation de la méthode globale pour éviter le conflit de nom
+const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const driverSelect = document.getElementById('driverSelect');
 const coursesContainer = document.getElementById('coursesContainer');
@@ -11,13 +12,17 @@ const connStatus = document.getElementById('connection-status');
 let currentDriver = "";
 
 // Mettre à jour l'état de la connexion visuelle
-connStatus.innerHTML = '<span style="color:#10b981;">● En ligne</span>';
+if (connStatus) {
+    connStatus.innerHTML = '<span style="color:#10b981;">● En ligne</span>';
+}
 
 // Écouteur de changement de chauffeur
-driverSelect.addEventListener('change', (e) => {
-    currentDriver = e.target.value;
-    fetchDriverCourses();
-});
+if (driverSelect) {
+    driverSelect.addEventListener('change', (e) => {
+        currentDriver = e.target.value;
+        fetchDriverCourses();
+    });
+}
 
 // Charger les courses du chauffeur sélectionné
 async function fetchDriverCourses() {
@@ -28,7 +33,7 @@ async function fetchDriverCourses() {
 
     const today = new Date().toISOString().split('T')[0];
 
-    const { data: courses, error } = await supabase
+    const { data: courses, error } = await supabaseClient
         .from('orders')
         .select('*')
         .eq('driver_name', currentDriver)
@@ -120,7 +125,7 @@ async function updateCourseStatus(courseId, newStatus) {
         updateData.dropoff_time = new Date().toISOString();
     }
 
-    const { error } = await supabase
+    const { error } = await supabaseClient
         .from('orders')
         .update(updateData)
         .eq('id', courseId);
@@ -133,7 +138,7 @@ async function updateCourseStatus(courseId, newStatus) {
 }
 
 // Écoute des changements en direct (Realtime)
-supabase
+supabaseClient
     .channel('driver-db-changes')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, payload => {
         console.log('Changement détecté !', payload);
