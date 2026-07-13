@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Espace Chauffeur - Suivi Missions VTC</title>
+    <title>Mon Planning - Michel VTC</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
@@ -40,44 +40,32 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
-            padding-bottom: 10px;
+            padding-bottom: 12px;
             border-bottom: 1px solid var(--border);
         }
 
         h1 {
             font-size: 20px;
             color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        .driver-selector-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 15px;
+        h1 i {
+            color: var(--primary);
+        }
+
+        .driver-info-bar {
+            background: rgba(37, 99, 235, 0.1);
+            border: 1px solid rgba(37, 99, 235, 0.2);
+            border-radius: 8px;
+            padding: 10px 14px;
             margin-bottom: 20px;
-        }
-
-        .form-group {
-            margin-bottom: 0px;
-        }
-
-        label {
-            display: block;
-            font-size: 13px;
-            font-weight: 600;
-            margin-bottom: 6px;
-            color: var(--text-secondary);
-        }
-
-        select {
-            width: 100%;
-            padding: 12px;
-            background: #0f172a;
-            color: var(--text-primary);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            font-size: 15px;
-            outline: none;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         /* Cartes de courses */
@@ -127,7 +115,7 @@
         .address-item {
             font-size: 13px;
             line-height: 1.5;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
         }
 
         .address-item:last-child {
@@ -180,27 +168,21 @@
 
     <div class="container">
         <header>
-            <h1><i class="fa-solid fa-car"></i> Espace Chauffeur</h1>
+            <h1><i class="fa-solid fa-calendar-days"></i> Mon Planning</h1>
             <div id="connection-status" style="font-size: 12px; font-weight: bold;">
                 <span style="color:#94a3b8;">● Hors ligne</span>
             </div>
         </header>
 
-        <!-- SELECTEUR DU PROFIL DE CHAUFFEUR -->
-        <div class="driver-selector-card">
-            <div class="form-group">
-                <label for="driverSelect">Sélectionnez votre profil :</label>
-                <select id="driverSelect" required>
-                    <option value="">-- Choisir un profil --</option>
-                    <option value="Michel">Michel</option>
-                    <option value="Chauffeur 2">Chauffeur 2 (Exemple)</option>
-                </select>
-            </div>
+        <!-- BARRE D'INFORMATION DE L'UTILISATEUR CONNECTÉ -->
+        <div class="driver-info-bar">
+            <span>Chauffeur connecté : <strong>Michel</strong></span>
+            <span style="color: var(--success);"><i class="fa-solid fa-circle-user"></i> Actif</span>
         </div>
 
         <!-- ZONE D'AFFICHAGE DES COURSES -->
         <div id="coursesContainer">
-            <div class="no-courses">Veuillez sélectionner un profil de chauffeur pour voir vos courses.</div>
+            <div class="no-courses">Connexion en cours...</div>
         </div>
     </div>
 
