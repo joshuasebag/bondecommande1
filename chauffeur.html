@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Espace Chauffeur - VTC</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #0f172a; /* Thème sombre pour les chauffeurs (conduite de nuit) */
+            --card-bg: #1e293b;
+            --text: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            padding: 15px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        h1 {
+            font-size: 20px;
+            color: var(--primary);
+        }
+
+        .driver-select-container {
+            margin-bottom: 20px;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 8px;
+            font-size: 16px;
+            outline: none;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* Cartes de course */
+        .course-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+        }
+
+        .course-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+            margin-bottom: 12px;
+        }
+
+        .course-time {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .course-price {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--success);
+        }
+
+        .address-block {
+            margin-bottom: 15px;
+            position: relative;
+            padding-left: 20px;
+        }
+
+        .address-block::before {
+            content: '';
+            position: absolute;
+            left: 5px;
+            top: 5px;
+            bottom: 5px;
+            width: 2px;
+            background: var(--border);
+        }
+
+        .address-item {
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .address-item i {
+            margin-right: 8px;
+        }
+
+        .client-info {
+            background: rgba(255,255,255,0.05);
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        /* Boutons d'action */
+        .btn-action {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: opacity 0.2s;
+        }
+
+        .btn-pickup {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-dropoff {
+            background-color: var(--success);
+            color: white;
+        }
+
+        .btn-action:active {
+            opacity: 0.8;
+        }
+
+        .badge-status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status-attente { background-color: rgba(245, 158, 11, 0.2); color: var(--warning); }
+        .status-charge { background-color: rgba(37, 99, 235, 0.2); color: var(--primary); }
+        .status-depose { background-color: rgba(16, 185, 129, 0.2); color: var(--success); }
+
+        .no-courses {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1><i class="fa-solid fa-cab"></i> Chauffeur Portal</h1>
+            <div id="connection-status" style="font-size: 12px; color: var(--text-secondary);">Connexion...</div>
+        </header>
+
+        <!-- Sélecteur de profil pour que le chauffeur s'identifie -->
+        <div class="driver-select-container">
+            <label style="display:block; margin-bottom: 6px; font-size: 12px; color: var(--text-secondary);">Sélectionnez votre nom :</label>
+            <select id="driverSelect">
+                <option value="">-- Choisir mon profil --</option>
+                <option value="Chauffeur 1">Chauffeur 1</option>
+                <option value="Chauffeur 2">Chauffeur 2</option>
+            </select>
+        </div>
+
+        <div class="section-title">Mes Courses du Jour</div>
+        <div id="coursesContainer">
+            <div class="no-courses">Veuillez sélectionner un profil de chauffeur pour voir vos courses.</div>
+        </div>
+    </div>
+
+    <!-- SDK Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Code logique chauffeur -->
+    <script src="chauffeur.js"></script>
+</body>
+</html>
