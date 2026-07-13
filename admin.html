@@ -10,115 +10,210 @@
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Espace Admin - Bons de Commande VTC</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <title>Console Pro - Administration VTC</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
             --primary: #2563eb;
             --primary-hover: #1d4ed8;
             --success: #10b981;
+            --success-bg: #e6f4ea;
             --warning: #f59e0b;
+            --warning-bg: #fef7e0;
             --danger: #ef4444;
             --danger-hover: #dc2626;
+            --danger-bg: #fce8e6;
             --bg: #f8fafc;
             --card-bg: #ffffff;
-            --text: #1e293b;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
             --border: #e2e8f0;
+            --radius: 12px;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
 
         body {
             background-color: var(--bg);
-            color: var(--text);
-            padding: 20px;
+            color: var(--text-main);
+            padding: 24px;
+            -webkit-font-smoothing: antialiased;
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
         }
 
+        /* --- HEADER STYLE --- */
         header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid var(--border);
+            margin-bottom: 32px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
         }
 
-        h1 {
+        header h1 {
             font-size: 24px;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            letter-spacing: -0.02em;
+        }
+
+        header h1 i {
             color: var(--primary);
         }
 
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #e0f2fe;
+            color: #0369a1;
+            padding: 6px 12px;
+            border-radius: 9999px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #0ea5e9;
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.5; }
+        }
+
+        .logout-btn {
+            background-color: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .logout-btn:hover {
+            background-color: var(--danger-bg);
+            color: var(--danger);
+            border-color: #fecaca;
+        }
+
+        /* --- LAYOUT GRID --- */
         .grid {
             display: grid;
             grid-template-columns: 1fr;
-            gap: 30px;
+            gap: 32px;
         }
 
         @media (min-width: 1100px) {
             .grid {
-                grid-template-columns: 1fr 2fr;
+                grid-template-columns: 450px 1fr;
             }
         }
 
-        /* Cartes / Sections */
+        /* --- CARD STYLE --- */
         .card {
             background: var(--card-bg);
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border-radius: var(--radius);
+            padding: 28px;
+            box-shadow: var(--shadow-sm);
             border: 1px solid var(--border);
+            transition: box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-md);
         }
 
         .card-title {
             font-size: 18px;
-            margin-bottom: 20px;
+            margin-bottom: 24px;
             display: flex;
             align-items: center;
-            gap: 10px;
-            font-weight: 600;
+            gap: 12px;
+            font-weight: 700;
+            color: var(--text-main);
+            letter-spacing: -0.01em;
         }
 
-        /* Formulaire */
+        .card-title i {
+            font-size: 20px;
+        }
+
+        /* --- FORMULAIRE MODERNISÉ --- */
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
             position: relative;
         }
 
         label {
             display: block;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
-            margin-bottom: 6px;
-            color: #64748b;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
         input, select, textarea {
             width: 100%;
-            padding: 10px 12px;
+            padding: 12px 14px;
             border: 1px solid var(--border);
-            border-radius: 6px;
+            border-radius: 8px;
             font-size: 14px;
+            color: var(--text-main);
+            background-color: #f8fafc;
             outline: none;
-            transition: border-color 0.2s;
+            transition: all 0.15s ease;
+        }
+
+        input::placeholder, textarea::placeholder {
+            color: #94a3b8;
         }
 
         input:focus, select:focus, textarea:focus {
+            background-color: #ffffff;
             border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
         }
 
         .row {
             display: flex;
-            gap: 12px;
+            gap: 16px;
         }
 
         .row > .form-group {
@@ -127,47 +222,64 @@
 
         button.btn {
             width: 100%;
-            padding: 12px;
+            padding: 14px;
             background-color: var(--primary);
             color: white;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             font-size: 15px;
             font-weight: 600;
             cursor: pointer;
-            transition: background-color 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
         }
 
         button.btn:hover {
             background-color: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 12px -1px rgba(37, 99, 235, 0.3);
         }
 
-        /* Suggestions Autocomplétion Adresse */
+        button.btn:active {
+            transform: translateY(0);
+        }
+
+        /* --- AUTOCOMPLÉTION --- */
         .suggestions {
             position: absolute;
             background: white;
             border: 1px solid var(--border);
-            border-radius: 6px;
+            border-radius: 8px;
             width: 100%;
-            z-index: 10;
-            max-height: 150px;
+            z-index: 100;
+            max-height: 200px;
             overflow-y: auto;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            box-shadow: var(--shadow-lg);
+            margin-top: 4px;
         }
 
         .suggestion-item {
-            padding: 8px 12px;
+            padding: 10px 14px;
             cursor: pointer;
             font-size: 13px;
+            color: var(--text-main);
+            transition: background 0.15s ease;
         }
 
         .suggestion-item:hover {
             background-color: #f1f5f9;
+            color: var(--primary);
         }
 
-        /* Tableau de suivi */
+        /* --- TABLEAU DE SUIVI LUXE --- */
         .table-container {
             overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid var(--border);
         }
 
         table {
@@ -178,76 +290,82 @@
         }
 
         th {
-            background-color: #f1f5f9;
-            padding: 12px;
+            background-color: #f8fafc;
+            padding: 16px;
             font-weight: 600;
-            color: #475569;
-            border-bottom: 2px solid var(--border);
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
         td {
-            padding: 14px 12px;
+            padding: 18px 16px;
             border-bottom: 1px solid var(--border);
             vertical-align: middle;
+            color: var(--text-main);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background-color: #f8fafc;
         }
 
         /* Badges de Statut */
         .badge {
-            display: inline-block;
-            padding: 4px 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
             border-radius: 9999px;
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 600;
-            text-transform: uppercase;
         }
 
-        .badge-attente { background-color: #fef3c7; color: #d97706; }
-        .badge-charge { background-color: #dbeafe; color: #1d4ed8; }
-        .badge-depose { background-color: #d1fae5; color: #065f46; }
+        .badge-attente { background-color: var(--warning-bg); color: #b45309; }
+        .badge-attente::before { content: "●"; color: var(--warning); }
 
-        /* Boutons d'action rapides du tableau */
+        .badge-charge { background-color: #e0f2fe; color: #0369a1; }
+        .badge-charge::before { content: "●"; color: #0284c7; }
+
+        .badge-depose { background-color: var(--success-bg); color: #15803d; }
+        .badge-depose::before { content: "●"; color: var(--success); }
+
+        /* Boutons d'action rapides */
         .action-btn-row {
             display: flex;
-            gap: 5px;
+            gap: 8px;
         }
 
         .action-icon {
-            border: 1px solid #cbd5e1;
-            padding: 6px 10px;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 13px;
-        }
-
-        .action-edit { background: #fef08a; color: #854d0e; border-color: #fef08a; }
-        .action-edit:hover { background: #fde047; }
-        
-        .action-delete { background: #fecaca; color: #991b1b; border-color: #fecaca; }
-        .action-delete:hover { background: #fca5a5; }
-
-        .action-share { background: #f1f5f9; color: #334155; }
-        .action-share:hover { background: #e2e8f0; }
-
-        /* Bouton de Déconnexion */
-        .logout-btn {
-            background: none;
             border: 1px solid var(--border);
-            color: #64748b;
-            padding: 6px 12px;
+            background-color: white;
+            padding: 8px;
             border-radius: 6px;
             cursor: pointer;
+            transition: all 0.15s ease;
             font-size: 13px;
-            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 34px;
         }
 
-        .logout-btn:hover {
-            background-color: var(--danger);
-            color: white;
-            border-color: var(--danger);
-        }
+        .action-edit { color: var(--warning); }
+        .action-edit:hover { background: var(--warning-bg); border-color: #fde047; }
+        
+        .action-delete { color: var(--danger); }
+        .action-delete:hover { background: var(--danger-bg); border-color: #fca5a5; }
 
-        /* --- STYLES POP-UP / MODAL DE MODIFICATION --- */
+        .action-share { color: var(--primary); }
+        .action-share:hover { background: #eff6ff; border-color: #bfdbfe; }
+
+        /* --- MODAL POP-UP STYLE --- */
         .modal {
             display: none; 
             position: fixed; 
@@ -256,58 +374,60 @@
             top: 0;
             width: 100%; 
             height: 100%; 
-            overflow: auto; 
-            background-color: rgba(15, 23, 42, 0.6); 
-            backdrop-filter: blur(4px);
+            background-color: rgba(15, 23, 42, 0.4); 
+            backdrop-filter: blur(8px);
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            padding: 24px;
         }
 
         .modal-content {
             background-color: var(--card-bg);
-            border-radius: 12px;
+            border-radius: var(--radius);
             width: 100%;
-            max-width: 600px;
-            padding: 24px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+            max-width: 650px;
+            padding: 32px;
+            box-shadow: var(--shadow-lg);
             border: 1px solid var(--border);
             position: relative;
-            animation: slideIn 0.3s ease-out;
+            animation: modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        @keyframes slideIn {
-            from { transform: translateY(-20px); opacity: 0; }
+        @keyframes modalSlideUp {
+            from { transform: translateY(24px); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
         }
 
         .modal-close {
             position: absolute;
-            top: 15px;
-            right: 20px;
-            font-size: 24px;
+            top: 24px;
+            right: 24px;
+            font-size: 20px;
             cursor: pointer;
-            color: #64748b;
-            transition: color 0.2s;
+            color: var(--text-muted);
+            transition: color 0.15s ease;
         }
 
         .modal-close:hover {
-            color: var(--danger);
+            color: var(--text-main);
         }
 
         .modal-footer {
-            margin-top: 20px;
+            margin-top: 28px;
             display: flex;
             justify-content: flex-end;
-            gap: 10px;
+            gap: 12px;
+            border-top: 1px solid var(--border);
+            padding-top: 20px;
         }
 
         .btn-secondary {
-            background: #cbd5e1;
-            color: #1e293b;
+            background: #f1f5f9;
+            color: #334155;
+            border: 1px solid #e2e8f0;
         }
         .btn-secondary:hover {
-            background: #cbd5e1e0;
+            background: #e2e8f0;
         }
 
     </style>
@@ -315,20 +435,24 @@
 <body>
 
     <div class="container">
+        <!-- HEADER -->
         <header>
-            <h1><i class="fa-solid fa-folder-open"></i> Console Admin - VTC</h1>
-            <div style="display: flex; align-items: center; gap: 15px;">
-                <span style="font-weight: bold; color: #64748b;">Statut : Connecté</span>
-                <button onclick="logout()" class="logout-btn"><i class="fa-solid fa-power-off"></i> Déconnexion</button>
+            <h1><i class="fa-solid fa-compass"></i> Console Admin - VTC</h1>
+            <div class="header-actions">
+                <div class="status-badge">
+                    <span class="status-dot"></span>
+                    Système Connecté
+                </div>
+                <button onclick="logout()" class="logout-btn"><i class="fa-solid fa-arrow-right-from-bracket"></i> Déconnexion</button>
             </div>
         </header>
 
         <div class="grid">
-            <!-- COLONNE 1 : CRÉATION DU BON -->
+            <!-- COLONNE FORMULAIRE -->
             <div class="card">
                 <div class="card-title">
-                    <i class="fa-solid fa-file-signature" style="color: var(--primary);"></i>
-                    Créer un Bon de Commande
+                    <i class="fa-solid fa-circle-plus" style="color: var(--primary);"></i>
+                    Nouveau Bon de Commande
                 </div>
                 <form id="orderForm">
                     <div class="row">
@@ -347,11 +471,11 @@
 
                     <div class="row">
                         <div class="form-group">
-                            <label for="date">Date</label>
+                            <label for="date">Date de départ</label>
                             <input type="date" id="date" required>
                         </div>
                         <div class="form-group">
-                            <label for="time">Heure</label>
+                            <label for="time">Heure de départ</label>
                             <input type="time" id="time" required>
                         </div>
                     </div>
@@ -370,11 +494,11 @@
 
                     <div class="row">
                         <div class="form-group">
-                            <label for="clientName">Nom Client</label>
+                            <label for="clientName">Nom du Client</label>
                             <input type="text" id="clientName" placeholder="M. Dupont" required>
                         </div>
                         <div class="form-group">
-                            <label for="clientPhone">Tél Client</label>
+                            <label for="clientPhone">Tél. Client</label>
                             <input type="tel" id="clientPhone" placeholder="06..." required>
                         </div>
                     </div>
@@ -396,25 +520,25 @@
 
                     <div class="form-group">
                         <label for="info">Informations complémentaires</label>
-                        <textarea id="info" rows="2" placeholder="Ex: Vol AF123, pancarte..."></textarea>
+                        <textarea id="info" rows="3" placeholder="Ex: Vol AF123, pancarte d'accueil..."></textarea>
                     </div>
 
-                    <button type="submit" class="btn"><i class="fa-solid fa-paper-plane"></i> Créer et Envoyer</button>
+                    <button type="submit" class="btn"><i class="fa-solid fa-paper-plane"></i> Créer et Envoyer la Mission</button>
                 </form>
             </div>
 
-            <!-- COLONNE 2 : LE SUIVI DES COURSES -->
+            <!-- COLONNE SUIVI / TABLEAU -->
             <div class="card">
                 <div class="card-title">
-                    <i class="fa-solid fa-chart-line" style="color: var(--success);"></i>
-                    Suivi des Prises en Charge & Déposes
+                    <i class="fa-solid fa-list-check" style="color: var(--success);"></i>
+                    Suivi des Courses Actives
                 </div>
 
                 <div class="table-container">
                     <table>
                         <thead>
                             <tr>
-                                <th>Date/Heure</th>
+                                <th>Date & Heure</th>
                                 <th>Chauffeur</th>
                                 <th>Trajet</th>
                                 <th>Client</th>
@@ -424,8 +548,8 @@
                         </thead>
                         <tbody id="ordersTableBody">
                             <tr>
-                                <td colspan="6" style="text-align: center; color: #94a3b8; padding: 30px;">
-                                    En attente de connexion à la base de données...
+                                <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 40px;">
+                                    <i class="fa-solid fa-circle-notch fa-spin" style="margin-right: 8px; color: var(--primary);"></i> Connexion à Supabase en cours...
                                 </td>
                             </tr>
                         </tbody>
@@ -438,8 +562,8 @@
     <!-- --- BOÎTE MODAL (FENÊTRE POP-UP) POUR MODIFIER UNE COURSE --- -->
     <div id="editModal" class="modal">
         <div class="modal-content">
-            <span class="modal-close" onclick="closeEditModal()">&times;</span>
-            <h2 style="margin-bottom: 20px; color: var(--primary);"><i class="fa-solid fa-pen-to-square"></i> Modifier la Course</h2>
+            <span class="modal-close" onclick="closeEditModal()"><i class="fa-solid fa-xmark"></i></span>
+            <h2 style="margin-bottom: 24px; color: var(--text-main); font-weight: 700; letter-spacing: -0.02em;"><i class="fa-solid fa-pen-to-square" style="color: var(--primary); margin-right: 8px;"></i> Modifier la Course</h2>
             
             <form id="editOrderForm">
                 <input type="hidden" id="editOrderId">
@@ -522,13 +646,13 @@
 
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" onclick="closeEditModal()" style="width: auto; padding: 10px 20px;">Annuler</button>
-                    <button type="submit" class="btn" style="width: auto; padding: 10px 20px;">Enregistrer les modifications</button>
+                    <button type="submit" class="btn" style="width: auto; padding: 10px 20px; box-shadow: none;">Enregistrer les modifications</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Script pour la déconnexion -->
+    <!-- Script de déconnexion native -->
     <script>
         function logout() {
             sessionStorage.removeItem('admin_connected');
