@@ -92,7 +92,6 @@ const fetchVehicles = async () => {
     }
 };
 
-// Afficher les véhicules dans la table de gestion de la flotte
 function renderVehiclesList() {
     const tbody = document.getElementById('vehiclesTableBody');
     if (!tbody) return;
@@ -119,7 +118,6 @@ function renderVehiclesList() {
     });
 }
 
-// Remplir les menus déroulants
 function populateVehicleDropdowns() {
     const createSelect = document.getElementById('assignedVehicle');
     const editSelect = document.getElementById('editAssignedVehicle');
@@ -136,7 +134,6 @@ function populateVehicleDropdowns() {
     if (editSelect) editSelect.innerHTML = generateOptionsHTML();
 }
 
-// Supprimer un véhicule de la flotte
 async function deleteVehicle(vehId) {
     if (!supabaseClient) return;
     if (!confirm("Voulez-vous supprimer ce véhicule de la flotte ?")) return;
@@ -150,8 +147,6 @@ async function deleteVehicle(vehId) {
     }
 }
 
-
-// --- ENREGISTRER UN NOUVEAU VÉHICULE ---
 const vehicleForm = document.getElementById('vehicleForm');
 if (vehicleForm) {
     vehicleForm.addEventListener('submit', async (e) => {
@@ -178,31 +173,35 @@ if (vehicleForm) {
 }
 
 
-// --- CALCULER ET AFFICHER LE CA MENSUEL DES CHAUFFEURS ---
+// --- CALCUL DU CA MENSUEL ULTRA-TOLÉRANT (CORRIGÉ) ---
 function calculateDriverStats() {
     const statsContainer = document.getElementById('driverStatsContainer');
     if (!statsContainer) return;
 
     const currentDate = new Date();
-    
-    // Obtenir l'année et le mois sous forme de texte (ex: "2026-07")
     const currentYear = currentDate.getFullYear();
-    const currentMonthNum = String(currentDate.getMonth() + 1).padStart(2, '0'); // Janvier = "01", Juillet = "07"
-    const currentYearMonthStr = `${currentYear}-${currentMonthNum}`; // Résultat : "2026-07"
+    const currentMonthNum = String(currentDate.getMonth() + 1).padStart(2, '0'); // ex: "07"
+    const currentYearMonthStr = `${currentYear}-${currentMonthNum}`; // ex: "2026-07"
 
-    // Objet de calcul temporaire
+    // Initialisation par défaut pour éviter le blocage à 0
     const driverEarnings = {
         "Michel": 0,
         "Chauffeur 2": 0
     };
 
     globalOrders.forEach(order => {
-        // Condition stricte : Le statut de la course doit être "depose" (Terminé)
-        if (order.status === 'depose' && order.date) {
-            // Découper la date Supabase "2026-07-13" pour récupérer uniquement "2026-07"
-            const orderYearMonth = order.date.substring(0, 7);
+        if (!order.status || !order.date) return;
 
-            // Si le mois de la course correspond au mois en cours
+        // Nettoyer le statut pour ignorer les majuscules et les accents (ex: "Déposé" -> "depose")
+        const cleanStatus = order.status.toLowerCase()
+                                         .normalize("NFD")
+                                         .replace(/[\u0300-\u036f]/g, "")
+                                         .trim();
+
+        // On accepte "depose" ou "termine"
+        if (cleanStatus === "depose" || cleanStatus === "termine") {
+            const orderYearMonth = order.date.substring(0, 7).trim(); // Récupère "AAAA-MM"
+
             if (orderYearMonth === currentYearMonthStr) {
                 const driver = order.driver_name || "Non assigné";
                 const price = parseFloat(order.price) || 0;
@@ -215,15 +214,13 @@ function calculateDriverStats() {
         }
     });
 
-    // Générer le HTML des cartes de CA
+    // Génération propre de l'affichage
     statsContainer.innerHTML = '';
-    
     const monthName = currentDate.toLocaleDateString('fr-FR', { month: 'long' });
     const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
 
     Object.keys(driverEarnings).forEach(driver => {
         const earnings = driverEarnings[driver];
-        
         const statBox = document.createElement('div');
         statBox.className = 'stat-box';
         statBox.innerHTML = `
@@ -239,7 +236,7 @@ function calculateDriverStats() {
 }
 
 
-// --- GÉNÉRER LE TEXTE DU BON DE COMMANDE ---
+// --- FICHES DE COMMANDE TEXTE ---
 function generateMissionText(order) {
     const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
     const formattedDate = order.date ? new Date(order.date).toLocaleDateString('fr-FR', options) : 'Date inconnue';
@@ -283,7 +280,6 @@ En cas de besoin : +33661376190
 Siret 90776001100029`;
 }
 
-// Partager la mission
 async function shareMissionFromAdmin(orderData) {
     const order = JSON.parse(decodeURIComponent(orderData));
     const text = generateMissionText(order);
@@ -295,9 +291,7 @@ async function shareMissionFromAdmin(orderData) {
                 text: text
             });
             return;
-        } catch (err) {
-            console.log("Partage non supporté.");
-        }
+        } catch (err) {}
     }
 
     try {
@@ -309,7 +303,7 @@ async function shareMissionFromAdmin(orderData) {
 }
 
 
-// --- RECUPÉRATION ET AFFICHAGE DES COMMANDES ---
+// --- REFRESH DES TABLEAUX ---
 const fetchAndDisplayOrders = async () => {
     if (!supabaseClient) return;
 
@@ -323,7 +317,7 @@ const fetchAndDisplayOrders = async () => {
         if (error) throw error;
 
         globalOrders = orders || [];
-        calculateDriverStats(); // Mettre à jour les indicateurs de CA dès que les données changent
+        calculateDriverStats(); // Lancement du calcul tolérant
 
         const tbody = document.getElementById('ordersTableBody');
         if (!tbody) return;
@@ -340,12 +334,16 @@ const fetchAndDisplayOrders = async () => {
             
             let badgeClass = 'badge-attente';
             let statusLabel = 'En attente';
-            if (order.status === 'charge') {
-                badgeClass = 'badge-charge';
-                statusLabel = 'Pris en charge';
-            } else if (order.status === 'depose') {
-                badgeClass = 'badge-depose';
-                statusLabel = 'Déposé';
+            
+            if (order.status) {
+                const checkStat = order.status.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+                if (checkStat === 'charge') {
+                    badgeClass = 'badge-charge';
+                    statusLabel = 'Pris en charge';
+                } else if (checkStat === 'depose' || checkStat === 'termine') {
+                    badgeClass = 'badge-depose';
+                    statusLabel = 'Déposé';
+                }
             }
 
             const safeOrderData = encodeURIComponent(JSON.stringify(order));
@@ -391,7 +389,7 @@ const fetchAndDisplayOrders = async () => {
 };
 
 
-// --- SUPPRIMER UNE COURSE ---
+// --- SUPPRESSIONS ---
 async function deleteOrder(orderId) {
     if (!supabaseClient) return;
     if (!confirm("Voulez-vous supprimer définitivement cette course ?")) return;
@@ -406,7 +404,7 @@ async function deleteOrder(orderId) {
 }
 
 
-// --- GESTION DU MODAL DE MODIFICATION ---
+// --- EDITIONS (MODAL) ---
 const editModal = document.getElementById('editModal');
 
 function openEditModal(orderData) {
@@ -440,7 +438,6 @@ window.onclick = function(event) {
     }
 }
 
-// Soumission de l'édition
 const editOrderForm = document.getElementById('editOrderForm');
 if (editOrderForm) {
     editOrderForm.addEventListener('submit', async (e) => {
@@ -482,7 +479,7 @@ if (editOrderForm) {
 }
 
 
-// --- SOUMISSION DE CRÉATION DE COURSE ---
+// --- CREATION ---
 const orderForm = document.getElementById('orderForm');
 if (orderForm) {
     orderForm.addEventListener('submit', async (e) => {
@@ -519,10 +516,10 @@ if (orderForm) {
 }
 
 
-// --- INITIALISATION & TEMPS RÉEL ---
+// --- ABONNEMENT REALTIME ---
 const init = async () => {
-    await fetchVehicles(); // Charger les véhicules en premier
-    await fetchAndDisplayOrders(); // Charger les courses ensuite
+    await fetchVehicles(); 
+    await fetchAndDisplayOrders(); 
 
     if (supabaseClient) {
         supabaseClient
