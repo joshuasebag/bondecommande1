@@ -154,7 +154,7 @@ const fetchAndDisplayOrders = async () => {
         tbody.innerHTML = '';
 
         if (!orders || orders.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 20px;">Aucune course enregistrée.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 40px;">Aucune course enregistrée.</td></tr>`;
             return;
         }
 
@@ -173,19 +173,25 @@ const fetchAndDisplayOrders = async () => {
 
             const safeOrderData = encodeURIComponent(JSON.stringify(order));
 
+            // Formatage propre de la date pour le tableau
+            const dateFormatted = order.date ? new Date(order.date).toLocaleDateString('fr-FR', {day: '2-digit', month: '2-digit'}) : '--/--';
+
             tr.innerHTML = `
-                <td><strong>${new Date(order.date).toLocaleDateString('fr-FR')}</strong> à ${order.time}</td>
-                <td><i class="fa-solid fa-user-tie"></i> ${order.driver_name || 'Non assigné'}</td>
+                <td><strong>${dateFormatted}</strong> à ${order.time}</td>
+                <td><i class="fa-solid fa-user-tie" style="color: var(--primary); margin-right: 4px;"></i> ${order.driver_name || 'Non assigné'}</td>
                 <td>
-                    <div style="font-size:12px; color:#475569;"><strong>Départ:</strong> ${order.departure}</div>
-                    <div style="font-size:12px; color:#475569;"><strong>Dest:</strong> ${order.destination}</div>
+                    <div style="font-size:12px; font-weight: 500; color: var(--text-main);"><i class="fa-solid fa-circle" style="color:var(--primary); font-size:8px; margin-right:4px;"></i> ${order.departure}</div>
+                    <div style="font-size:12px; font-weight: 500; color: var(--text-main); margin-top: 4px;"><i class="fa-solid fa-location-dot" style="color:var(--danger); font-size:9px; margin-right:4px;"></i> ${order.destination}</div>
                 </td>
-                <td>${order.client_name} <br> <span style="font-size:11px; color:#64748b;">${order.client_phone}</span></td>
+                <td>
+                    <strong>${order.client_name}</strong>
+                    <div style="font-size:11px; color: var(--text-muted); margin-top:2px;"><i class="fa-solid fa-phone" style="font-size:10px;"></i> ${order.client_phone}</div>
+                </td>
                 <td><span class="badge ${badgeClass}">${statusLabel}</span></td>
                 <td>
                     <div class="action-btn-row">
                         <!-- COPIER / PARTAGER -->
-                        <button class="action-icon action-share" onclick="shareMissionFromAdmin('${safeOrderData}')" title="Partager">
+                        <button class="action-icon action-share" onclick="shareMissionFromAdmin('${safeOrderData}')" title="Copier/Partager">
                             <i class="fa-solid fa-share-nodes"></i>
                         </button>
                         <!-- MODIFIER -->
@@ -221,7 +227,6 @@ async function deleteOrder(orderId) {
             .eq('id', orderId);
 
         if (error) throw error;
-        alert("Course supprimée avec succès.");
         fetchAndDisplayOrders();
     } catch (error) {
         alert("Erreur de suppression : " + error.message);
