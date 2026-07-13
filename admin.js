@@ -1,546 +1,360 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <!-- SCRIPT DE SÉCURITÉ : Bloque l'accès direct si non connecté -->
-    <script>
-        if (sessionStorage.getItem('admin_connected') !== 'true') {
-            window.location.href = 'login.html';
-        }
-    </script>
+// --- CONFIGURATION SUPABASE ---
+const SUPABASE_URL = "https://vvdfxcnxzwcidxtzqfgx.supabase.co"; 
+const SUPABASE_KEY = "sb_publishable_sQLbXaT_zCNinhTaXd7Iiw_KsKIAeS2";
 
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Espace Admin - Bons de Commande VTC</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        :root {
-            --primary: #2563eb;
-            --primary-hover: #1d4ed8;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --danger-hover: #dc2626;
-            --bg: #f8fafc;
-            --card-bg: #ffffff;
-            --text: #1e293b;
-            --border: #e2e8f0;
-        }
+let supabaseClient;
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+// Initialisation de Supabase
+try {
+    if (typeof window !== "undefined" && window.supabase && typeof window.supabase.createClient === "function") {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    } else if (typeof supabase !== "undefined" && typeof supabase.createClient === "function") {
+        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    } else {
+        throw new Error("La bibliothèque Supabase n'est pas encore chargée dans le navigateur.");
+    }
+} catch (err) {
+    console.error("Erreur d'initialisation Supabase dans admin.js :", err);
+}
+
+// --- AUTOCOMPLÉTION DES ADRESSES ---
+const setupAutocomplete = (inputId, suggestionsId) => {
+    const input = document.getElementById(inputId);
+    const suggestionsContainer = document.getElementById(suggestionsId);
+
+    if (!input || !suggestionsContainer) return;
+
+    input.addEventListener('input', async (e) => {
+        const query = e.target.value.trim();
+        if (query.length < 3) {
+            suggestionsContainer.style.display = 'none';
+            return;
         }
 
-        body {
-            background-color: var(--bg);
-            color: var(--text);
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid var(--border);
-        }
-
-        h1 {
-            font-size: 24px;
-            color: var(--primary);
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 30px;
-        }
-
-        @media (min-width: 1100px) {
-            .grid {
-                grid-template-columns: 1fr 2fr;
-            }
-        }
-
-        /* Cartes / Sections */
-        .card {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            border: 1px solid var(--border);
-        }
-
-        .card-title {
-            font-size: 18px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-weight: 600;
-        }
-
-        /* Formulaire */
-        .form-group {
-            margin-bottom: 15px;
-            position: relative;
-        }
-
-        label {
-            display: block;
-            font-size: 13px;
-            font-weight: 600;
-            margin-bottom: 6px;
-            color: #64748b;
-        }
-
-        input, select, textarea {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            font-size: 14px;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-
-        input:focus, select:focus, textarea:focus {
-            border-color: var(--primary);
-        }
-
-        .row {
-            display: flex;
-            gap: 12px;
-        }
-
-        .row > .form-group {
-            flex: 1;
-        }
-
-        button.btn {
-            width: 100%;
-            padding: 12px;
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        button.btn:hover {
-            background-color: var(--primary-hover);
-        }
-
-        /* Suggestions Autocomplétion Adresse */
-        .suggestions {
-            position: absolute;
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            width: 100%;
-            z-index: 10;
-            max-height: 150px;
-            overflow-y: auto;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        }
-
-        .suggestion-item {
-            padding: 8px 12px;
-            cursor: pointer;
-            font-size: 13px;
-        }
-
-        .suggestion-item:hover {
-            background-color: #f1f5f9;
-        }
-
-        /* Tableau de suivi */
-        .table-container {
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: left;
-            font-size: 14px;
-        }
-
-        th {
-            background-color: #f1f5f9;
-            padding: 12px;
-            font-weight: 600;
-            color: #475569;
-            border-bottom: 2px solid var(--border);
-        }
-
-        td {
-            padding: 14px 12px;
-            border-bottom: 1px solid var(--border);
-            vertical-align: middle;
-        }
-
-        /* Badges de Statut */
-        .badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 9999px;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .badge-attente { background-color: #fef3c7; color: #d97706; }
-        .badge-charge { background-color: #dbeafe; color: #1d4ed8; }
-        .badge-depose { background-color: #d1fae5; color: #065f46; }
-
-        /* Boutons d'action rapides du tableau */
-        .action-btn-row {
-            display: flex;
-            gap: 5px;
-        }
-
-        .action-icon {
-            border: 1px solid #cbd5e1;
-            padding: 6px 10px;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 13px;
-        }
-
-        .action-edit { background: #fef08a; color: #854d0e; border-color: #fef08a; }
-        .action-edit:hover { background: #fde047; }
-        
-        .action-delete { background: #fecaca; color: #991b1b; border-color: #fecaca; }
-        .action-delete:hover { background: #fca5a5; }
-
-        .action-share { background: #f1f5f9; color: #334155; }
-        .action-share:hover { background: #e2e8f0; }
-
-        /* Bouton de Déconnexion */
-        .logout-btn {
-            background: none;
-            border: 1px solid var(--border);
-            color: #64748b;
-            padding: 6px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 13px;
-            transition: all 0.2s;
-        }
-
-        .logout-btn:hover {
-            background-color: var(--danger);
-            color: white;
-            border-color: var(--danger);
-        }
-
-        /* --- STYLES POP-UP / MODAL DE MODIFICATION --- */
-        .modal {
-            display: none; 
-            position: fixed; 
-            z-index: 1000; 
-            left: 0;
-            top: 0;
-            width: 100%; 
-            height: 100%; 
-            overflow: auto; 
-            background-color: rgba(15, 23, 42, 0.6); 
-            backdrop-filter: blur(4px);
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .modal-content {
-            background-color: var(--card-bg);
-            border-radius: 12px;
-            width: 100%;
-            max-width: 600px;
-            padding: 24px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
-            border: 1px solid var(--border);
-            position: relative;
-            animation: slideIn 0.3s ease-out;
-        }
-
-        @keyframes slideIn {
-            from { transform: translateY(-20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        .modal-close {
-            position: absolute;
-            top: 15px;
-            right: 20px;
-            font-size: 24px;
-            cursor: pointer;
-            color: #64748b;
-            transition: color 0.2s;
-        }
-
-        .modal-close:hover {
-            color: var(--danger);
-        }
-
-        .modal-footer {
-            margin-top: 20px;
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-        }
-
-        .btn-secondary {
-            background: #cbd5e1;
-            color: #1e293b;
-        }
-        .btn-secondary:hover {
-            background: #cbd5e1e0;
-        }
-
-    </style>
-</head>
-<body>
-
-    <div class="container">
-        <header>
-            <h1><i class="fa-solid fa-folder-open"></i> Console Admin - VTC</h1>
-            <div style="display: flex; align-items: center; gap: 15px;">
-                <span style="font-weight: bold; color: #64748b;">Statut : Connecté</span>
-                <button onclick="logout()" class="logout-btn"><i class="fa-solid fa-power-off"></i> Déconnexion</button>
-            </div>
-        </header>
-
-        <div class="grid">
-            <!-- COLONNE 1 : CRÉATION DU BON -->
-            <div class="card">
-                <div class="card-title">
-                    <i class="fa-solid fa-file-signature" style="color: var(--primary);"></i>
-                    Créer un Bon de Commande
-                </div>
-                <form id="orderForm">
-                    <div class="row">
-                        <div class="form-group">
-                            <label for="serviceType">Type de Service</label>
-                            <select id="serviceType" required>
-                                <option value="Transfert">Transfert</option>
-                                <option value="Mise à Disposition">Mise à Disposition</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="price">Tarif (€)</label>
-                            <input type="number" id="price" placeholder="Ex: 80" required>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="form-group">
-                            <label for="date">Date</label>
-                            <input type="date" id="date" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="time">Heure</label>
-                            <input type="time" id="time" required>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="departure">Adresse de Départ</label>
-                        <input type="text" id="departure" placeholder="Rechercher une adresse..." autocomplete="off" required>
-                        <div id="departure-suggestions" class="suggestions" style="display:none;"></div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="destination">Adresse de Destination</label>
-                        <input type="text" id="destination" placeholder="Rechercher une adresse..." autocomplete="off" required>
-                        <div id="destination-suggestions" class="suggestions" style="display:none;"></div>
-                    </div>
-
-                    <div class="row">
-                        <div class="form-group">
-                            <label for="clientName">Nom Client</label>
-                            <input type="text" id="clientName" placeholder="M. Dupont" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="clientPhone">Tél Client</label>
-                            <input type="tel" id="clientPhone" placeholder="06..." required>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="form-group">
-                            <label for="passengers">Passagers</label>
-                            <input type="number" id="passengers" value="1" min="1" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="assignedDriver">Assigner Chauffeur</label>
-                            <select id="assignedDriver" required>
-                                <option value="">-- Choisir --</option>
-                                <option value="Michel">Michel</option>
-                                <option value="Chauffeur 2">Chauffeur 2 (Exemple)</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="info">Informations complémentaires</label>
-                        <textarea id="info" rows="2" placeholder="Ex: Vol AF123, pancarte..."></textarea>
-                    </div>
-
-                    <button type="submit" class="btn"><i class="fa-solid fa-paper-plane"></i> Créer et Envoyer</button>
-                </form>
-            </div>
-
-            <!-- COLONNE 2 : LE SUIVI DES COURSES -->
-            <div class="card">
-                <div class="card-title">
-                    <i class="fa-solid fa-chart-line" style="color: var(--success);"></i>
-                    Suivi des Prises en Charge & Déposes
-                </div>
-
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Date/Heure</th>
-                                <th>Chauffeur</th>
-                                <th>Trajet</th>
-                                <th>Client</th>
-                                <th>Statut</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="ordersTableBody">
-                            <tr>
-                                <td colspan="6" style="text-align: center; color: #94a3b8; padding: 30px;">
-                                    En attente de connexion à la base de données...
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- --- BOÎTE MODAL (FENÊTRE POP-UP) POUR MODIFIER UNE COURSE --- -->
-    <div id="editModal" class="modal">
-        <div class="modal-content">
-            <span class="modal-close" onclick="closeEditModal()">&times;</span>
-            <h2 style="margin-bottom: 20px; color: var(--primary);"><i class="fa-solid fa-pen-to-square"></i> Modifier la Course</h2>
+        try {
+            const response = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(query)}&limit=5`);
+            const data = await response.json();
+            suggestionsContainer.innerHTML = '';
             
-            <form id="editOrderForm">
-                <input type="hidden" id="editOrderId">
-                
-                <div class="row">
-                    <div class="form-group">
-                        <label for="editServiceType">Type de Service</label>
-                        <select id="editServiceType" required>
-                            <option value="Transfert">Transfert</option>
-                            <option value="Mise à Disposition">Mise à Disposition</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="editPrice">Tarif (€)</label>
-                        <input type="number" id="editPrice" required>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="form-group">
-                        <label for="editDate">Date</label>
-                        <input type="date" id="editDate" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="editTime">Heure</label>
-                        <input type="time" id="editTime" required>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="editDeparture">Adresse de Départ</label>
-                    <input type="text" id="editDeparture" autocomplete="off" required>
-                    <div id="editDeparture-suggestions" class="suggestions" style="display:none;"></div>
-                </div>
-
-                <div class="form-group">
-                    <label for="editDestination">Adresse de Destination</label>
-                    <input type="text" id="editDestination" autocomplete="off" required>
-                    <div id="editDestination-suggestions" class="suggestions" style="display:none;"></div>
-                </div>
-
-                <div class="row">
-                    <div class="form-group">
-                        <label for="editClientName">Nom Client</label>
-                        <input type="text" id="editClientName" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="editClientPhone">Tél Client</label>
-                        <input type="tel" id="editClientPhone" required>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="form-group">
-                        <label for="editPassengers">Passagers</label>
-                        <input type="number" id="editPassengers" min="1" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="editAssignedDriver">Assigner Chauffeur</label>
-                        <select id="editAssignedDriver" required>
-                            <option value="Michel">Michel</option>
-                            <option value="Chauffeur 2">Chauffeur 2 (Exemple)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="editStatus">Statut Course</label>
-                    <select id="editStatus" required>
-                        <option value="attente">En attente</option>
-                        <option value="charge">Client à bord</option>
-                        <option value="depose">Terminé</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="editInfo">Informations complémentaires</label>
-                    <textarea id="editInfo" rows="2"></textarea>
-                </div>
-
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closeEditModal()" style="width: auto; padding: 10px 20px;">Annuler</button>
-                    <button type="submit" class="btn" style="width: auto; padding: 10px 20px;">Enregistrer les modifications</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Script pour la déconnexion -->
-    <script>
-        function logout() {
-            sessionStorage.removeItem('admin_connected');
-            window.location.href = 'login.html';
+            if (data.features && data.features.length > 0) {
+                suggestionsContainer.style.display = 'block';
+                data.features.forEach(feature => {
+                    const div = document.createElement('div');
+                    div.className = 'suggestion-item';
+                    div.textContent = feature.properties.label;
+                    div.addEventListener('click', () => {
+                        input.value = feature.properties.label;
+                        suggestionsContainer.style.display = 'none';
+                    });
+                    suggestionsContainer.appendChild(div);
+                });
+            } else {
+                suggestionsContainer.style.display = 'none';
+            }
+        } catch (error) {
+            console.error("Erreur adresses :", error);
         }
-    </script>
+    });
 
-    <!-- CHARGEMENT DU SDK SUPABASE (UMD COMPATIBLE) -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.js"></script>
+    document.addEventListener('click', (e) => {
+        if (e.target !== input && e.target !== suggestionsContainer) {
+            suggestionsContainer.style.display = 'none';
+        }
+    });
+};
+
+// Configurer l'autocomplétion sur la création ET la modification
+setupAutocomplete('departure', 'departure-suggestions');
+setupAutocomplete('destination', 'destination-suggestions');
+setupAutocomplete('editDeparture', 'editDeparture-suggestions');
+setupAutocomplete('editDestination', 'editDestination-suggestions');
+
+
+// --- GÉNÉRER LE TEXTE FORMATÉ DU BON DE COMMANDE ---
+function generateMissionText(order) {
+    const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+    const formattedDate = order.date ? new Date(order.date).toLocaleDateString('fr-FR', options) : 'Date inconnue';
     
-    <!-- SCRIPT DE LOGIQUE APPLICATIVE -->
-    <script src="admin.js"></script>
+    const creationDate = order.created_at ? new Date(order.created_at).toLocaleDateString('fr-FR') : new Date().toLocaleDateString('fr-FR');
+    const creationTime = order.created_at ? new Date(order.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '21h00';
 
-</body>
-</html>
+    const dateCapitalized = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
+
+    return `VOTRE MISSION - SERVICE COMMANDÉ : ${order.service_type ? order.service_type.toUpperCase() : 'VAN'}
+-------------------------
+Date et heure : ${dateCapitalized} à ${order.time || '--:--'}
+
+Départ : ${order.departure || 'Non spécifié'}
+
+Destination : ${order.destination || 'Non spécifiée'}
+
+client : ${order.client_name || 'Non spécifié'}
+Tel : ${order.client_phone || ''}  (${order.passengers || 1} pax)
+
+Chauffeur : ${order.driver_name || 'Non assigné'}
+0661376190
+Mercedes Class V
+HB190LY
+
+Tarif sous-traitant : ${order.price || '0'}€ ttc PP
+
+Infos : ${order.info || 'Aucune'}
+Commandé le ${creationDate} à ${creationTime}
+
+Nous vous remercions pour votre confiance.
+-------------------------
+ 
+Fernand Michel Sebag
+En cas de besoin : +33661376190
+Siret 90776001100029`;
+}
+
+// --- COPIER / PARTAGER LA MISSION ---
+async function shareMissionFromAdmin(orderData) {
+    const order = JSON.parse(decodeURIComponent(orderData));
+    const text = generateMissionText(order);
+
+    if (navigator.share) {
+        try {
+            await navigator.share({
+                title: 'Mission VTC Envoyée',
+                text: text
+            });
+            return;
+        } catch (err) {
+            console.log("Partage annulé ou non disponible.");
+        }
+    }
+
+    try {
+        await navigator.clipboard.writeText(text);
+        alert("Bon de commande formaté copié dans le presse-papiers !");
+    } catch (err) {
+        alert("Échec de la copie automatique.");
+    }
+}
+
+
+// --- RÉCUPÉRATION ET AFFICHAGE DES COURSES ---
+const fetchAndDisplayOrders = async () => {
+    if (!supabaseClient) return;
+
+    try {
+        const { data: orders, error } = await supabaseClient
+            .from('orders')
+            .select('*')
+            .order('date', { ascending: true })
+            .order('time', { ascending: true });
+
+        if (error) throw error;
+
+        const tbody = document.getElementById('ordersTableBody');
+        if (!tbody) return;
+        
+        tbody.innerHTML = '';
+
+        if (!orders || orders.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 20px;">Aucune course enregistrée.</td></tr>`;
+            return;
+        }
+
+        orders.forEach(order => {
+            const tr = document.createElement('tr');
+            
+            let badgeClass = 'badge-attente';
+            let statusLabel = 'En attente';
+            if (order.status === 'charge') {
+                badgeClass = 'badge-charge';
+                statusLabel = 'Pris en charge';
+            } else if (order.status === 'depose') {
+                badgeClass = 'badge-depose';
+                statusLabel = 'Déposé';
+            }
+
+            const safeOrderData = encodeURIComponent(JSON.stringify(order));
+
+            tr.innerHTML = `
+                <td><strong>${new Date(order.date).toLocaleDateString('fr-FR')}</strong> à ${order.time}</td>
+                <td><i class="fa-solid fa-user-tie"></i> ${order.driver_name || 'Non assigné'}</td>
+                <td>
+                    <div style="font-size:12px; color:#475569;"><strong>Départ:</strong> ${order.departure}</div>
+                    <div style="font-size:12px; color:#475569;"><strong>Dest:</strong> ${order.destination}</div>
+                </td>
+                <td>${order.client_name} <br> <span style="font-size:11px; color:#64748b;">${order.client_phone}</span></td>
+                <td><span class="badge ${badgeClass}">${statusLabel}</span></td>
+                <td>
+                    <div class="action-btn-row">
+                        <!-- COPIER / PARTAGER -->
+                        <button class="action-icon action-share" onclick="shareMissionFromAdmin('${safeOrderData}')" title="Partager">
+                            <i class="fa-solid fa-share-nodes"></i>
+                        </button>
+                        <!-- MODIFIER -->
+                        <button class="action-icon action-edit" onclick="openEditModal('${safeOrderData}')" title="Modifier">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                        <!-- SUPPRIMER -->
+                        <button class="action-icon action-delete" onclick="deleteOrder('${order.id}')" title="Supprimer">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } catch (error) {
+        console.error("Erreur de récupération :", error);
+    }
+};
+
+
+// --- SUPPRIMER UNE COURSE ---
+async function deleteOrder(orderId) {
+    if (!supabaseClient) return;
+    
+    const confirmDelete = confirm("Êtes-vous sûr de vouloir supprimer définitivement cette course ?");
+    if (!confirmDelete) return;
+
+    try {
+        const { error } = await supabaseClient
+            .from('orders')
+            .delete()
+            .eq('id', orderId);
+
+        if (error) throw error;
+        alert("Course supprimée avec succès.");
+        fetchAndDisplayOrders();
+    } catch (error) {
+        alert("Erreur de suppression : " + error.message);
+    }
+}
+
+
+// --- GESTION DU POP-UP DE MODIFICATION (MODAL) ---
+const editModal = document.getElementById('editModal');
+
+function openEditModal(orderData) {
+    const order = JSON.parse(decodeURIComponent(orderData));
+
+    // Remplir les champs du pop-up avec les valeurs existantes
+    document.getElementById('editOrderId').value = order.id;
+    document.getElementById('editServiceType').value = order.service_type || 'Transfert';
+    document.getElementById('editPrice').value = order.price || 0;
+    document.getElementById('editDate').value = order.date || '';
+    document.getElementById('editTime').value = order.time || '';
+    document.getElementById('editDeparture').value = order.departure || '';
+    document.getElementById('editDestination').value = order.destination || '';
+    document.getElementById('editClientName').value = order.client_name || '';
+    document.getElementById('editClientPhone').value = order.client_phone || '';
+    document.getElementById('editPassengers').value = order.passengers || 1;
+    document.getElementById('editAssignedDriver').value = order.driver_name || '';
+    document.getElementById('editStatus').value = order.status || 'attente';
+    document.getElementById('editInfo').value = order.info || '';
+
+    // Afficher le modal
+    editModal.style.display = 'flex';
+}
+
+function closeEditModal() {
+    editModal.style.display = 'none';
+}
+
+// Fermer si clic en dehors du formulaire
+window.onclick = function(event) {
+    if (event.target == editModal) {
+        closeEditModal();
+    }
+}
+
+// Soumission des modifications
+const editOrderForm = document.getElementById('editOrderForm');
+if (editOrderForm) {
+    editOrderForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!supabaseClient) return;
+
+        const orderId = document.getElementById('editOrderId').value;
+        const updatedOrder = {
+            service_type: document.getElementById('editServiceType').value,
+            price: parseFloat(document.getElementById('editPrice').value),
+            date: document.getElementById('editDate').value,
+            time: document.getElementById('editTime').value,
+            departure: document.getElementById('editDeparture').value,
+            destination: document.getElementById('editDestination').value,
+            client_name: document.getElementById('editClientName').value,
+            client_phone: document.getElementById('editClientPhone').value,
+            passengers: parseInt(document.getElementById('editPassengers').value),
+            driver_name: document.getElementById('editAssignedDriver').value,
+            status: document.getElementById('editStatus').value,
+            info: document.getElementById('editInfo').value
+        };
+
+        try {
+            const { error } = await supabaseClient
+                .from('orders')
+                .update(updatedOrder)
+                .eq('id', orderId);
+
+            if (error) throw error;
+
+            alert("Course mise à jour avec succès !");
+            closeEditModal();
+            fetchAndDisplayOrders();
+        } catch (error) {
+            alert("Erreur lors de la mise à jour : " + error.message);
+        }
+    });
+}
+
+
+// --- SOUMISSION DU FORMULAIRE (CRÉATION DE COURSE) ---
+const orderForm = document.getElementById('orderForm');
+if (orderForm) {
+    orderForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!supabaseClient) return;
+
+        const newOrder = {
+            service_type: document.getElementById('serviceType').value,
+            price: parseFloat(document.getElementById('price').value),
+            date: document.getElementById('date').value,
+            time: document.getElementById('time').value,
+            departure: document.getElementById('departure').value,
+            destination: document.getElementById('destination').value,
+            client_name: document.getElementById('clientName').value,
+            client_phone: document.getElementById('clientPhone').value,
+            passengers: parseInt(document.getElementById('passengers').value),
+            driver_name: document.getElementById('assignedDriver').value,
+            info: document.getElementById('info').value,
+            status: 'attente'
+        };
+
+        try {
+            const { error } = await supabaseClient
+                .from('orders')
+                .insert([newOrder]);
+
+            if (error) throw error;
+
+            alert("Bon de commande envoyé avec succès !");
+            orderForm.reset();
+            fetchAndDisplayOrders();
+        } catch (error) {
+            alert("Erreur lors de la création de la course : " + error.message);
+        }
+    });
+}
+
+
+// --- ABONNEMENT TEMPS RÉEL (REALTIME) ---
+if (supabaseClient) {
+    supabaseClient
+        .channel('schema-db-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, payload => {
+            console.log('Changement détecté en temps réel !', payload);
+            fetchAndDisplayOrders();
+        })
+        .subscribe();
+}
+
+// Premier chargement au lancement de la page
+fetchAndDisplayOrders();
