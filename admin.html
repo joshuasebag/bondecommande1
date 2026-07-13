@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Espace Admin - Bons de Commande VTC</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        h1 {
+            font-size: 24px;
+            color: var(--primary);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+        }
+
+        @media (min-width: 900px) {
+            .grid {
+                grid-template-columns: 1fr 2fr;
+            }
+        }
+
+        /* Cartes / Sections */
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border);
+        }
+
+        .card-title {
+            font-size: 18px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+        }
+
+        /* Formulaire */
+        .form-group {
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #64748b;
+        }
+
+        input, select, textarea {
+            width: 100px;
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--primary);
+        }
+
+        .row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .row > .form-group {
+            flex: 1;
+        }
+
+        button.btn {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button.btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        /* Suggestions Autocomplétion Adresse */
+        .suggestions {
+            position: absolute;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            width: 100%;
+            z-index: 10;
+            max-height: 150px;
+            overflow-y: auto;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .suggestion-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .suggestion-item:hover {
+            background-color: #f1f5f9;
+        }
+
+        /* Tableau de suivi */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        th {
+            background-color: #f1f5f9;
+            padding: 12px;
+            font-weight: 600;
+            color: #475569;
+            border-bottom: 2px solid var(--border);
+        }
+
+        td {
+            padding: 14px 12px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+
+        /* Badges de Statut */
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 9999px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-attente { background-color: #fef3c7; color: #d97706; }
+        .badge-charge { background-color: #dbeafe; color: #1d4ed8; }
+        .badge-depose { background-color: #d1fae5; color: #065f46; }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1><i class="fa-solid fa-folder-open"></i> Console Admin - VTC</h1>
+            <div>
+                <span style="font-weight: bold; color: #64748b;">Statut : Connecté</span>
+            </div>
+        </header>
+
+        <div class="grid">
+            <!-- COLONNE 1 : CRÉATION DU BON -->
+            <div class="card">
+                <div class="card-title">
+                    <i class="fa-solid fa-file-signature" style="color: var(--primary);"></i>
+                    Créer un Bon de Commande
+                </div>
+                <form id="orderForm">
+                    <div class="row">
+                        <div class="form-group">
+                            <label for="serviceType">Type de Service</label>
+                            <select id="serviceType" required>
+                                <option value="Transfert">Transfert</option>
+                                <option value="Mise à Disposition">Mise à Disposition</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="price">Tarif (€)</label>
+                            <input type="number" id="price" placeholder="Ex: 80" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="form-group">
+                            <label for="date">Date</label>
+                            <input type="date" id="date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="time">Heure</label>
+                            <input type="time" id="time" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="departure">Adresse de Départ</label>
+                        <input type="text" id="departure" placeholder="Rechercher une adresse..." autocomplete="off" required>
+                        <div id="departure-suggestions" class="suggestions" style="display:none;"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="destination">Adresse de Destination</label>
+                        <input type="text" id="destination" placeholder="Rechercher une adresse..." autocomplete="off" required>
+                        <div id="destination-suggestions" class="suggestions" style="display:none;"></div>
+                    </div>
+
+                    <div class="row">
+                        <div class="form-group">
+                            <label for="clientName">Nom Client</label>
+                            <input type="text" id="clientName" placeholder="M. Dupont" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="clientPhone">Tél Client</label>
+                            <input type="tel" id="clientPhone" placeholder="06..." required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="form-group">
+                            <label for="passengers">Passagers</label>
+                            <input type="number" id="passengers" value="1" min="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="assignedDriver">Assigner Chauffeur</label>
+                            <select id="assignedDriver" required>
+                                <option value="">-- Choisir --</option>
+                                <option value="Chauffeur 1">Chauffeur 1 (Exemple)</option>
+                                <option value="Chauffeur 2">Chauffeur 2 (Exemple)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="info">Informations complémentaires</label>
+                        <textarea id="info" rows="2" placeholder="Ex: Vol AF123, pancarte..."></textarea>
+                    </div>
+
+                    <button type="submit" class="btn"><i class="fa-solid fa-paper-plane"></i> Créer et Envoyer</button>
+                </form>
+            </div>
+
+            <!-- COLONNE 2 : LE SUIVI DES COURSES -->
+            <div class="card">
+                <div class="card-title">
+                    <i class="fa-solid fa-chart-line" style="color: var(--success);"></i>
+                    Suivi des Prises en Charge & Déposes
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date/Heure</th>
+                                <th>Chauffeur</th>
+                                <th>Trajet</th>
+                                <th>Client</th>
+                                <th>Statut</th>
+                                <th>Étapes (Heures)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ordersTableBody">
+                            <!-- Les lignes de commandes s'inséreront ici dynamiquement -->
+                            <tr>
+                                <td colspan="6" style="text-align: center; color: #94a3b8; padding: 30px;">
+                                    En attente de connexion à la base de données...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
