@@ -1,135 +1,113 @@
 const SUPABASE_URL = "https://vvdfxcnxzwcidxtzqfgx.supabase.co"; 
 const SUPABASE_KEY = "sb_publishable_sQLbXaT_zCNinhTaXd7Iiw_KsKIAeS2";
 let supabaseClient;
+try { if (typeof window !== "undefined" && window.supabase) supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch (err) {}
 
-try {
-    if (typeof window !== "undefined" && window.supabase) {
-        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    }
-} catch (err) { console.error("Erreur d'initialisation Supabase:", err); }
+let currentDriver = null;
+let allVehicles = [];
 
-// État local
-let driverName = sessionStorage.getItem('driver_name');
-let chauffeurOrders = [];
+// --- GESTION DE LA CONNEXION ---
+const loginSection = document.getElementById('loginSection');
+const appSection = document.getElementById('appSection');
 
-// Vérification de sécurité
-if (!driverName) {
-    window.location.href = 'login.html';
-}
-
-// --- FONCTION PRINCIPALE D'AFFICHAGE ---
-const fetchAndDisplayChauffeurOrders = async () => {
-    if (!supabaseClient) return;
-    
-    // On récupère uniquement les courses du chauffeur connecté
-    const { data: orders, error } = await supabaseClient
-        .from('orders')
-        .select('*')
-        .eq('driver_name', driverName)
-        .order('date', { ascending: true })
-        .order('time', { ascending: true });
-    
-    if (error) {
-        console.error("Erreur lors de la récupération :", error);
-        return;
-    }
-
-    chauffeurOrders = orders || [];
-    const container = document.getElementById('chauffeurOrdersContainer');
-    if (!container) return;
-    
-    if (chauffeurOrders.length === 0) {
-        container.innerHTML = `<div class="card" style="text-align:center; padding:20px;">Aucune course assignée pour le moment.</div>`;
-        return;
-    }
-    
-    // Génération des cartes
-    container.innerHTML = chauffeurOrders.map(o => {
-        const wazeUrl = `https://waze.com/ul?q=${encodeURIComponent(o.destination)}`;
-        const dateISO = o.date ? o.date.replace(/-/g, '') : '';
-        const timeISO = o.time ? o.time.replace(/:/g, '') : '0000';
-        const gCalUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=Course+${encodeURIComponent(o.client_name)}&dates=${dateISO}T${timeISO}00Z/${dateISO}T${timeISO}00Z&details=Client:+${o.client_name}+-+Tel:+${o.client_phone}&location=${encodeURIComponent(o.destination)}`;
-        
-        const st = (o.status||'').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-        const badge = st === 'charge' ? 'badge-charge' : (st === 'depose' || st === 'termine' ? 'badge-depose' : 'badge-attente');
-        const statusLabel = st === 'charge' ? 'Pris en charge' : (st === 'depose' || st === 'termine' ? 'Déposé' : 'En attente');
-
-        return `
-        <div class="card" style="margin-bottom: 20px; border-left: 5px solid var(--primary);">
-            <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:12px;">
-                <div>
-                    <div style="font-size:24px; font-weight:800;">${o.time}</div>
-                    <div style="font-size:13px; color:var(--text-muted);">${o.date}</div>
-                </div>
-                <div style="text-align:right;">
-                    <div style="font-size:18px; font-weight:bold; color:var(--primary);">${o.price || 0} €</div>
-                    <span class="badge ${badge}">${statusLabel}</span>
-                </div>
-            </div>
-            
-            <div style="margin-bottom:10px;">
-                <div style="font-weight:700; font-size:16px;">${o.client_name}</div>
-                <a href="tel:${o.client_phone}" style="display:block; color:var(--info); font-weight:600; text-decoration:none; margin-top:5px;">
-                    <i class="fa-solid fa-phone"></i> ${o.client_phone}
-                </a>
-            </div>
-
-            <div style="background:#f8fafc; padding:12px; border-radius:6px; margin-bottom:15px; font-size:14px; border: 1px solid var(--border);">
-                <div><i class="fa-solid fa-circle-dot" style="color:var(--primary); margin-right:5px;"></i> ${o.departure}</div>
-                <div style="margin:5px 0;"><i class="fa-solid fa-arrow-down" style="margin-left:4px; font-size:10px;"></i></div>
-                <div><i class="fa-solid fa-location-dot" style="color:var(--danger); margin-right:5px;"></i> ${o.destination}</div>
-            </div>
-
-            <div style="display:flex; gap:10px;">
-                <a href="${gCalUrl}" target="_blank" class="btn" style="flex:1; text-align:center;">
-                    <i class="fa-solid fa-calendar-days"></i> Agenda
-                </a>
-                <a href="${wazeUrl}" target="_blank" class="btn" style="flex:1; text-align:center;">
-                    <i class="fa-brands fa-waze"></i> Waze
-                </a>
-            </div>
-            
-            <button class="btn" style="background: var(--success); color: white; border: none; margin-top: 10px;" onclick="updateChauffeurStatus('${o.id}', 'depose')">
-                <i class="fa-solid fa-check"></i> Marquer comme Terminé
-            </button>
-        </div>`;
-    }).join('');
-};
-
-// --- GESTION ÉTAT ---
-async function updateChauffeurStatus(id, newStatus) {
-    if(confirm("Confirmer la fin de cette course ?")) {
-        const { error } = await supabaseClient
-            .from('orders')
-            .update({ status: newStatus })
-            .eq('id', id);
-            
-        if (!error) {
-            fetchAndDisplayChauffeurOrders();
-        } else {
-            alert("Erreur lors de la mise à jour.");
-        }
+function checkSession() {
+    const saved = sessionStorage.getItem('logged_driver');
+    if (saved) {
+        currentDriver = saved;
+        document.getElementById('displayDriverName').innerText = currentDriver;
+        loginSection.style.display = 'none';
+        appSection.style.display = 'block';
+        initApp();
     }
 }
+checkSession();
 
-// --- DÉCONNEXION ---
-function logout() {
-    sessionStorage.removeItem('driver_name');
-    window.location.href = 'login.html';
+document.getElementById('driverLoginForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if(!supabaseClient) return;
+    const name = document.getElementById('loginName').value.trim();
+    const pass = document.getElementById('loginPassword').value.trim();
+
+    const { data, error } = await supabaseClient.from('drivers').select('*').eq('name', name).eq('password', pass);
+    
+    if (data && data.length > 0) {
+        sessionStorage.setItem('logged_driver', data[0].name);
+        checkSession();
+    } else {
+        alert("Identifiant ou mot de passe incorrect.");
+    }
+});
+
+function logoutDriver() {
+    sessionStorage.removeItem('logged_driver');
+    location.reload();
 }
 
-// --- INITIALISATION ---
-const init = async () => {
-    fetchAndDisplayChauffeurOrders();
-    
-    // Temps réel pour recevoir les nouvelles courses instantanément
+// --- LOGIQUE APPLICATION ---
+async function initApp() {
+    await fetchVehicles();
+    await fetchDriverCourses();
     if (supabaseClient) {
-        supabaseClient.channel('db-changes')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
-                fetchAndDisplayChauffeurOrders();
-            })
+        supabaseClient.channel('driver-changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchDriverCourses())
             .subscribe();
     }
-};
+}
 
-init();
+async function fetchVehicles() {
+    const { data } = await supabaseClient.from('vehicles').select('*');
+    allVehicles = data || [];
+}
+
+async function fetchDriverCourses() {
+    const { data: courses } = await supabaseClient.from('orders').select('*').eq('driver_name', currentDriver).order('date', { ascending: true }).order('time', { ascending: true });
+    renderCourses(courses || []);
+}
+
+function generateMissionText(course) {
+    const fDate = course.date ? new Date(course.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : '';
+    const v = allVehicles.find(v => v.id === course.vehicle_id);
+    return `VOTRE MISSION - SERVICE COMMANDÉ : ${course.service_type||'VAN'}\n-------------------------\nDate/Heure : ${fDate} à ${course.time}\nDépart : ${course.departure}\nDestination : ${course.destination}\n\nClient : ${course.client_name} - ${course.client_phone}\n\nTarif : ${course.price}€\n-------------------------`;
+}
+
+async function shareMission(courseId, courseData) {
+    const text = generateMissionText(JSON.parse(decodeURIComponent(courseData)));
+    if (navigator.share) { try { await navigator.share({ text: text }); return; } catch(e){} }
+    try { await navigator.clipboard.writeText(text); alert("Copié !"); } catch(e){}
+}
+
+function renderCourses(courses) {
+    const container = document.getElementById('coursesContainer');
+    container.innerHTML = courses.length === 0 ? '<div class="no-courses">Aucune course pour vous.</div>' : '';
+    
+    courses.forEach(course => {
+        let btn = '', badge = '';
+        if (course.status === 'attente') { badge = '<span class="badge-status status-attente">En attente</span>'; btn = `<button class="btn-action btn-pickup" onclick="updateCourseStatus('${course.id}', 'charge')"><i class="fa-solid fa-street-view"></i> Prise en Charge</button>`; } 
+        else if (course.status === 'charge') { badge = '<span class="badge-status status-charge">Client à bord</span>'; btn = `<button class="btn-action btn-dropoff" onclick="updateCourseStatus('${course.id}', 'depose')"><i class="fa-solid fa-flag-checkered"></i> Valider Dépose</button>`; } 
+        else { badge = '<span class="badge-status status-depose">Terminé</span>'; btn = `<div style="text-align:center; color:#10b981; font-weight:bold;"><i class="fa-solid fa-check"></i> Complétée</div>`; }
+
+        const safeD = encodeURIComponent(JSON.stringify(course));
+        const dF = course.date ? new Date(course.date).toLocaleDateString('fr-FR', {day: 'numeric', month: 'short'}) : '';
+        const v = allVehicles.find(x => x.id === course.vehicle_id);
+
+        container.innerHTML += `<div class="course-card">
+            <div class="course-header"><span class="course-time">${dF} à ${course.time}</span>${badge}</div>
+            <div class="address-block">
+                <div style="color:white; margin-bottom:6px;"><i class="fa-solid fa-circle" style="color:#2563eb; font-size:10px;"></i> ${course.departure}</div>
+                <div style="color:white;"><i class="fa-solid fa-location-dot" style="color:#ef4444; font-size:12px;"></i> ${course.destination}</div>
+            </div>
+            <div class="client-info">
+                <div><i class="fa-solid fa-user"></i> ${course.client_name} - <a href="tel:${course.client_phone}" style="color:#38bdf8;">${course.client_phone}</a></div>
+                <div style="margin-top:8px; color:white;"><i class="fa-solid fa-car"></i> ${v ? v.model + ' (' + v.plate + ')' : 'Aucun véhicule'}</div>
+                ${course.info ? `<div style="margin-top:8px; font-style:italic;">Note: ${course.info}</div>` : ''}
+            </div>
+            <button class="btn-action" style="background:#475569; margin-bottom:12px;" onclick="shareMission('${course.id}', '${safeD}')"><i class="fa-solid fa-share-nodes"></i> Partager</button>
+            ${btn}
+        </div>`;
+    });
+}
+
+async function updateCourseStatus(id, st) {
+    await supabaseClient.from('orders').update({ status: st }).eq('id', id);
+    fetchDriverCourses();
+}
