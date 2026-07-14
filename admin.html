@@ -1,82 +1,341 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <script>if (sessionStorage.getItem('admin_connected') !== 'true') window.location.href = 'login.html';</script>
+    <!-- SCRIPT DE SÉCURITÉ -->
+    <script>
+        if (sessionStorage.getItem('admin_connected') !== 'true') {
+            window.location.href = 'login.html';
+        }
+    </script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Console Admin VTC</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root { --primary: #2563eb; --primary-hover: #1d4ed8; --success: #10b981; --warning: #f59e0b; --danger: #ef4444; --info: #3b82f6; --bg: #f1f5f9; --nav-bg: #0f172a; --card-bg: #ffffff; --text-main: #0f172a; --text-muted: #64748b; --border: #e2e8f0; --radius: 10px; }
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --bg: #f1f5f9;
+            --nav-bg: #0f172a;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --radius: 10px;
+        }
+
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body { background-color: var(--bg); color: var(--text-main); }
+        body { background-color: var(--bg); color: var(--text-main); -webkit-font-smoothing: antialiased; }
+
+        /* --- BARRE DE NAVIGATION HAUTE --- */
         .top-nav { background-color: var(--nav-bg); color: white; display: flex; justify-content: space-between; align-items: center; padding: 0 32px; height: 70px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 50; }
         .brand { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 12px; }
         .brand i { color: var(--primary); font-size: 24px; }
         .nav-tabs { display: flex; height: 100%; }
-        .nav-tab { padding: 0 24px; display: flex; align-items: center; gap: 10px; color: #cbd5e1; font-weight: 600; cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s; }
+        .nav-tab { padding: 0 24px; display: flex; align-items: center; gap: 10px; color: #cbd5e1; font-weight: 600; font-size: 15px; cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s; }
         .nav-tab:hover, .nav-tab.active { color: white; background-color: rgba(255,255,255,0.05); }
         .nav-tab.active { border-bottom-color: var(--primary); }
         .nav-actions { display: flex; align-items: center; gap: 20px; }
-        .status-dot { width: 10px; height: 10px; background-color: #10b981; border-radius: 50%; display: inline-block; }
-        .logout-btn { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #fca5a5; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; }
+        .status-dot { width: 10px; height: 10px; background-color: #10b981; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #10b981; }
+        .logout-btn { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #fca5a5; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s; }
+        .logout-btn:hover { background: rgba(239, 68, 68, 0.2); color: white; }
+
+        /* --- CONTENU PRINCIPAL --- */
         .main-content { padding: 30px 32px; max-width: 1800px; margin: 0 auto; }
-        .view-section { display: none; } .view-section.active { display: block; }
+        .view-section { display: none; animation: fadeIn 0.2s ease; }
+        .view-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* --- GRID COMPACTE --- */
         .grid { display: grid; grid-template-columns: 1fr; gap: 24px; }
         @media (min-width: 1100px) { .grid { grid-template-columns: 380px 1fr; } }
         .card { background: var(--card-bg); border-radius: var(--radius); padding: 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid var(--border); }
         .card-title { font-size: 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-weight: 700; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+
+        /* --- STATS CA --- */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+        .stat-box { background: #f8fafc; border: 1px solid var(--border); padding: 16px; border-radius: 8px; }
+
+        /* --- FORMULAIRES --- */
         .form-group { margin-bottom: 16px; position: relative; }
         label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 6px; color: var(--text-muted); text-transform: uppercase; }
-        input, select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background-color: #f8fafc; }
-        button.btn { width: 100%; padding: 14px; background-color: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
-        .suggestions { position: absolute; background: white; border: 1px solid var(--border); border-radius: 8px; width: 100%; z-index: 100; max-height: 200px; overflow-y: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .suggestion-item { padding: 10px; cursor: pointer; }
-        .table-container { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 800px; }
-        th { background-color: #f8fafc; padding: 14px; font-size: 12px; text-transform: uppercase; border-bottom: 1px solid var(--border); }
-        td { padding: 16px; border-bottom: 1px solid var(--border); }
-        .badge { padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; }
-        .action-icon { border: 1px solid var(--border); background-color: white; padding: 6px; border-radius: 6px; cursor: pointer; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; }
+        input, select, textarea { width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; background-color: #f8fafc; outline: none; transition: border-color 0.2s; }
+        input:focus, select:focus, textarea:focus { background-color: #fff; border-color: var(--primary); }
+        .row { display: flex; gap: 16px; }
+        .row > .form-group { flex: 1; min-width: 0; }
+        button.btn { width: 100%; padding: 14px; background-color: var(--primary); color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; }
+        button.btn:hover { background-color: var(--primary-hover); }
+        .suggestions { position: absolute; background: white; border: 1px solid var(--border); border-radius: 8px; width: 100%; z-index: 100; max-height: 200px; overflow-y: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-top: 4px; }
+        .suggestion-item { padding: 10px 14px; cursor: pointer; font-size: 14px; }
+        .suggestion-item:hover { background-color: #f1f5f9; color: var(--primary); }
+
+        /* --- TABLEAUX --- */
+        .table-container { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); -webkit-overflow-scrolling: touch; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; min-width: 800px; }
+        th { background-color: #f8fafc; padding: 14px 16px; font-weight: 600; color: var(--text-muted); border-bottom: 1px solid var(--border); font-size: 12px; text-transform: uppercase; }
+        td { padding: 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        tr:hover td { background-color: #f8fafc; }
+        .badge { display: inline-flex; align-items: center; padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+        .badge-attente { background-color: #fef7e0; color: #b45309; border: 1px solid #fde68a; }
+        .badge-charge { background-color: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+        .badge-depose { background-color: #e6f4ea; color: #15803d; border: 1px solid #bbf7d0; }
+
+        .action-btn-row { display: flex; gap: 6px; }
+        .action-icon { border: 1px solid var(--border); background-color: white; padding: 6px; border-radius: 6px; cursor: pointer; font-size: 14px; display: inline-flex; width: 34px; height: 34px; align-items: center; justify-content: center; transition: all 0.2s; }
+        .action-icon:hover { background-color: #f8fafc; }
+        .action-edit { color: var(--warning); }
+        .action-delete { color: var(--danger); }
+        .action-share { color: var(--primary); }
+        .action-planning { color: var(--info); }
+
+        /* --- MODAL --- */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(15,23,42,0.6); align-items: center; justify-content: center; padding: 20px; }
-        .modal-content { background-color: var(--card-bg); border-radius: var(--radius); width: 100%; max-width: 650px; padding: 30px; position: relative; }
-        .modal-close { position: absolute; top: 20px; right: 20px; font-size: 24px; cursor: pointer; }
+        .modal-content { background-color: var(--card-bg); border-radius: var(--radius); width: 100%; max-width: 650px; padding: 30px; position: relative; max-height: 90vh; overflow-y: auto; }
+        .modal-close { position: absolute; top: 20px; right: 20px; font-size: 24px; cursor: pointer; color: var(--text-muted); }
+
+        /* OPTIMISATIONS MOBILES */
+        @media (max-width: 900px) {
+            .top-nav { flex-wrap: wrap; height: auto; padding: 12px 16px; }
+            .brand { order: 1; width: auto; font-size: 18px; }
+            .nav-actions { order: 2; margin-left: auto; width: auto; gap: 10px; }
+            .nav-actions span { display: none; }
+            .logout-btn { padding: 8px 12px; font-size: 12px; }
+            .nav-tabs { order: 3; width: 100%; justify-content: center; margin-top: 12px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); }
+            .nav-tab { padding: 8px 16px; font-size: 14px; }
+            .main-content { padding: 15px 12px; }
+            .card { padding: 20px 16px; }
+        }
+        @media (max-width: 600px) {
+            .row { flex-direction: column; gap: 0; }
+            .row > .form-group { margin-bottom: 16px; width: 100%; }
+            .action-icon { width: 34px; height: 34px; font-size: 13px; }
+            table { font-size: 13px; }
+            .grid { gap: 16px; }
+        }
     </style>
 </head>
 <body>
+
+    <!-- BARRE DE NAVIGATION HAUTE -->
     <nav class="top-nav">
         <div class="brand"><i class="fa-solid fa-compass"></i> Admin VTC</div>
         <div class="nav-tabs">
             <div class="nav-tab active" onclick="switchView('orders-view', this)"><i class="fa-solid fa-list-check"></i> Commandes</div>
             <div class="nav-tab" onclick="switchView('dashboard-view', this)"><i class="fa-solid fa-chart-pie"></i> Équipe, CA & Flotte</div>
+            <!-- NOUVEL ONGLET CLIENTS -->
             <div class="nav-tab" onclick="switchView('clients-view', this)"><i class="fa-solid fa-address-book"></i> Clients</div>
         </div>
-        <button onclick="logout()" class="logout-btn"><i class="fa-solid fa-power-off"></i> Quitter</button>
+        <div class="nav-actions">
+            <span style="font-size: 14px; font-weight: 500; color: #cbd5e1;"><span class="status-dot" style="margin-right: 6px;"></span> En ligne</span>
+            <button onclick="logout()" class="logout-btn"><i class="fa-solid fa-power-off"></i> Quitter</button>
+        </div>
     </nav>
 
+    <!-- CONTENU PRINCIPAL -->
     <div class="main-content">
+        
+        <!-- VUE 1 : GESTION DES COURSES -->
         <div id="orders-view" class="view-section active">
             <div class="grid">
+                
+                <!-- Colonne Gauche : Formulaire -->
                 <div class="card">
-                    <div class="card-title">Nouveau Bon</div>
+                    <div class="card-title"><i class="fa-solid fa-plus" style="color: var(--primary);"></i> Nouveau Bon</div>
                     <form id="orderForm">
-                        <div class="form-group"><label>Client</label><input type="text" id="clientName" autocomplete="off" required><div id="clientName-suggestions" class="suggestions" style="display:none;"></div></div>
-                        <div class="form-group"><label>Téléphone</label><input type="tel" id="clientPhone" required></div>
-                        <button type="submit" class="btn">Envoyer Mission</button>
+                        <div class="row">
+                            <div class="form-group"><label>Service</label><select id="serviceType" required><option value="Transfert">Transfert</option><option value="Mise à Dispo">Mise à Dispo</option></select></div>
+                            <div class="form-group"><label>Tarif (€)</label><input type="number" id="price" required></div>
+                        </div>
+                        <div class="row">
+                            <div class="form-group"><label>Date</label><input type="date" id="date" required></div>
+                            <div class="form-group"><label>Heure</label><input type="time" id="time" required></div>
+                        </div>
+                        <div class="form-group"><label>Départ</label><input type="text" id="departure" autocomplete="off" required><div id="departure-suggestions" class="suggestions" style="display:none;"></div></div>
+                        <div class="form-group"><label>Destination</label><input type="text" id="destination" autocomplete="off" required><div id="destination-suggestions" class="suggestions" style="display:none;"></div></div>
+                        <div class="row">
+                            <div class="form-group"><label>Client</label><input type="text" id="clientName" required></div>
+                            <div class="form-group"><label>Téléphone</label><input type="tel" id="clientPhone" required></div>
+                        </div>
+                        <div class="row">
+                            <div class="form-group"><label>Chauffeur</label><select id="assignedDriver" required><option value="">- Choisir -</option></select></div>
+                            <div class="form-group"><label>Véhicule</label><select id="assignedVehicle" required><option value="">- Charger -</option></select></div>
+                        </div>
+                        <div class="row">
+                            <div class="form-group" style="flex: 0.4;"><label>Pax</label><input type="number" id="passengers" value="1" min="1" required></div>
+                            <div class="form-group" style="flex: 1;"><label>Notes</label><input type="text" id="info" placeholder="Vol AF123..."></div>
+                        </div>
+                        <button type="submit" class="btn" style="margin-top: 8px;"><i class="fa-solid fa-paper-plane"></i> Envoyer Mission</button>
                     </form>
                 </div>
-                <div class="card" style="padding: 0;"><div class="table-container"><table id="ordersTableBody"></table></div></div>
+
+                <!-- Colonne Droite : Le tableau -->
+                <div class="card" style="padding: 0; overflow: hidden;">
+                    <div class="card-title" style="margin: 24px 24px 0;"><i class="fa-solid fa-list" style="color: var(--text-main);"></i> Suivi des Missions</div>
+                    <div class="table-container" style="border: none; border-radius: 0; margin-top: 16px;">
+                        <table>
+                            <thead><tr><th>Date/Heure</th><th>Trajet & Client</th><th>Chauffeur & Véhicule</th><th>Statut</th><th>Act.</th></tr></thead>
+                            <tbody id="ordersTableBody"><tr><td colspan="5" style="text-align:center; padding: 40px;">Chargement...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
+
+        <!-- VUE 2 : TABLEAU DE BORD -->
         <div id="dashboard-view" class="view-section">
+            <div class="card" style="margin-bottom: 24px;">
+                <div class="card-title"><i class="fa-solid fa-chart-line" style="color: var(--primary);"></i> Chiffre d'Affaires</div>
+                <div class="stats-grid" id="driverStatsContainer"><div style="font-size:14px; color:#64748b;">Calcul en cours...</div></div>
+            </div>
+
+            <!-- CHAUFFEURS -->
+            <div class="grid" style="margin-bottom: 24px;">
+                <div class="card">
+                    <div class="card-title"><i class="fa-solid fa-user-plus" style="color: var(--primary);"></i> Créer un Chauffeur</div>
+                    <form id="driverForm">
+                        <div class="form-group"><label>Nom (Identifiant)</label><input type="text" id="driverName" placeholder="Ex: Michel" required></div>
+                        <div class="form-group"><label>Mot de passe</label><input type="text" id="driverPassword" placeholder="Ex: 1234" required></div>
+                        <button type="submit" class="btn" style="margin-top: 8px;"><i class="fa-solid fa-check"></i> Créer le profil</button>
+                    </form>
+                </div>
+
+                <div class="card" style="padding: 0; overflow: hidden;">
+                    <div class="card-title" style="margin: 24px 24px 0;"><i class="fa-solid fa-users" style="color: var(--primary);"></i> Équipe de Chauffeurs</div>
+                    <div class="table-container" style="border: none; border-radius: 0; margin-top: 16px;">
+                        <table>
+                            <thead><tr><th>Nom</th><th>Mot de passe</th><th>Act.</th></tr></thead>
+                            <tbody id="driversTableBody"><tr><td colspan="3" style="text-align:center; padding: 40px;">Aucun chauffeur.</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VÉHICULES -->
             <div class="grid">
-                <div class="card"><div class="card-title">Équipe</div><table id="driversTableBody"></table></div>
+                <div class="card">
+                    <div class="card-title"><i class="fa-solid fa-car" style="color: var(--success);"></i> Ajout Véhicule</div>
+                    <form id="vehicleForm">
+                        <div class="form-group"><label>Modèle</label><input type="text" id="vehicleModel" required></div>
+                        <div class="form-group"><label>Plaque</label><input type="text" id="vehiclePlate" required></div>
+                        <div class="form-group"><label>Contact Chauffeur</label><input type="tel" id="vehiclePhone" required></div>
+                        <button type="submit" class="btn" style="background-color: var(--success); margin-top: 8px;"><i class="fa-solid fa-check"></i> Ajouter</button>
+                    </form>
+                </div>
+
+                <div class="card" style="padding: 0; overflow: hidden;">
+                    <div class="card-title" style="margin: 24px 24px 0;"><i class="fa-solid fa-warehouse" style="color: var(--warning);"></i> Flotte Enregistrée</div>
+                    <div class="table-container" style="border: none; border-radius: 0; margin-top: 16px;">
+                        <table>
+                            <thead><tr><th>Modèle</th><th>Plaque</th><th>Contact</th><th>Act.</th></tr></thead>
+                            <tbody id="vehiclesTableBody"><tr><td colspan="4" style="text-align:center; padding: 40px;">Aucun véhicule.</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
+
+        <!-- NOUVELLE VUE 3 : BASE CLIENTS -->
         <div id="clients-view" class="view-section">
-            <div class="card"><div class="card-title">Base Clients</div><table id="clientsTableBody"></table></div>
+            <div class="card" style="padding: 0; overflow: hidden;">
+                <div class="card-title" style="margin: 24px 24px 0;">
+                    <i class="fa-solid fa-address-book" style="color: var(--primary);"></i> Carnet d'Adresses Automatique
+                </div>
+                <div style="padding: 0 24px; font-size: 13px; color: var(--text-muted); margin-bottom: 10px;">
+                    Cette liste est générée automatiquement à partir de l'historique des commandes.
+                </div>
+                <div class="table-container" style="border: none; border-radius: 0;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nom du Client</th>
+                                <th>Téléphone</th>
+                                <th>Courses effectuées</th>
+                                <th>CA Généré</th>
+                            </tr>
+                        </thead>
+                        <tbody id="clientsTableBody">
+                            <tr><td colspan="4" style="text-align:center; padding: 40px;">Chargement...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- MODAL DE MODIFICATION DES MISSIONS -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="document.getElementById('editModal').style.display='none'"><i class="fa-solid fa-xmark"></i></span>
+            <div class="card-title"><i class="fa-solid fa-pen" style="color: var(--primary);"></i> Éditer la Course</div>
+            <form id="editOrderForm">
+                <input type="hidden" id="editOrderId">
+                <div class="row">
+                    <div class="form-group"><label>Service</label><select id="editServiceType" required><option value="Transfert">Transfert</option><option value="Mise à Dispo">Mise à Dispo</option></select></div>
+                    <div class="form-group"><label>Tarif (€)</label><input type="number" id="editPrice" required></div>
+                </div>
+                <div class="row">
+                    <div class="form-group"><label>Date</label><input type="date" id="editDate" required></div>
+                    <div class="form-group"><label>Heure</label><input type="time" id="editTime" required></div>
+                </div>
+                <div class="row">
+                    <div class="form-group"><label>Départ</label><input type="text" id="editDeparture" autocomplete="off" required><div id="editDeparture-suggestions" class="suggestions" style="display:none;"></div></div>
+                    <div class="form-group"><label>Destination</label><input type="text" id="editDestination" autocomplete="off" required><div id="editDestination-suggestions" class="suggestions" style="display:none;"></div></div>
+                </div>
+                <div class="row">
+                    <div class="form-group"><label>Chauffeur</label><select id="editAssignedDriver" required></select></div>
+                    <div class="form-group"><label>Véhicule</label><select id="editAssignedVehicle" required></select></div>
+                </div>
+                <div class="form-group"><label>Statut</label><select id="editStatus" required><option value="attente">En attente</option><option value="charge">Client à bord</option><option value="depose">Terminé</option></select></div>
+                <button type="submit" class="btn" style="margin-top: 10px;">Mettre à jour</button>
+            </form>
         </div>
     </div>
+
+    <!-- MODAL DE MODIFICATION DU MOT DE PASSE CHAUFFEUR -->
+    <div id="editDriverModal" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <span class="modal-close" onclick="document.getElementById('editDriverModal').style.display='none'"><i class="fa-solid fa-xmark"></i></span>
+            <div class="card-title"><i class="fa-solid fa-pen" style="color: var(--primary);"></i> Modifier le mot de passe</div>
+            <form id="editDriverForm">
+                <input type="hidden" id="editDriverId">
+                <div class="form-group"><label>Nouveau mot de passe</label><input type="text" id="editDriverPassword" required></div>
+                <button type="submit" class="btn" style="margin-top: 10px;">Enregistrer</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL PLANNING CHAUFFEUR -->
+    <div id="planningModal" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <span class="modal-close" onclick="document.getElementById('planningModal').style.display='none'"><i class="fa-solid fa-xmark"></i></span>
+            <div class="card-title"><i class="fa-solid fa-calendar-days" style="color: var(--info);"></i> Planning de <span id="planningDriverName" style="margin-left: 8px;"></span></div>
+            <div class="table-container" style="border: none; border-radius: 0; margin-top: 16px; max-height: 400px; overflow-y: auto;">
+                <table style="min-width: 600px;">
+                    <thead><tr><th>Date & Heure</th><th>Trajet</th><th>Statut</th></tr></thead>
+                    <tbody id="planningTableBody">
+                        <!-- Le planning s'affichera ici -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT TABS & LOGOUT -->
+    <script>
+        function logout() { sessionStorage.removeItem('admin_connected'); window.location.href = 'login.html'; }
+        function switchView(viewId, element) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+            element.classList.add('active');
+        }
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.js"></script>
     <script src="admin.js"></script>
 </body>
