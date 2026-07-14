@@ -30,7 +30,7 @@ const setupAutocomplete = (inputId, suggestionsId) => {
                     suggestionsContainer.appendChild(div);
                 });
             } else { suggestionsContainer.style.display = 'none'; }
-        } catch (err) { console.error("Erreur autocomplétion:", err); }
+        } catch (err) {}
     });
     
     document.addEventListener('click', (e) => { if (e.target !== input && e.target !== suggestionsContainer) suggestionsContainer.style.display = 'none'; });
@@ -48,7 +48,7 @@ const fetchDrivers = async () => {
         renderDriversList();
         populateDriverDropdowns();
         calculateDriverStats();
-    } else { console.error("Erreur de chargement des chauffeurs:", error); }
+    }
 };
 
 function renderDriversList() {
@@ -62,79 +62,43 @@ function renderDriversList() {
             <td><code style="background:#f1f5f9; padding:4px 8px; border-radius:4px;">${d.password}</code></td>
             <td>
                 <div class="action-btn-row">
-                    <!-- BOUTON PARTAGE (LIEN) -->
-                    <button class="action-icon action-share" onclick="shareDriverLink('${d.name}', '${d.password}')" title="Copier les accès">
-                        <i class="fa-solid fa-link"></i>
-                    </button>
-                    <!-- BOUTON PLANNING -->
-                    <button class="action-icon action-planning" onclick="openPlanningModal('${d.name}')" title="Voir le planning">
-                        <i class="fa-solid fa-calendar-days"></i>
-                    </button>
-                    <!-- BOUTON ÉDITION -->
-                    <button class="action-icon action-edit" onclick="openEditDriverModal('${d.id}', '${d.password}')" title="Modifier le mot de passe">
-                        <i class="fa-solid fa-pen"></i>
-                    </button>
-                    <!-- BOUTON SUPPRESSION -->
-                    <button class="action-icon action-delete" onclick="deleteDriver('${d.id}')" title="Supprimer le chauffeur">
-                        <i class="fa-solid fa-trash-can"></i>
-                    </button>
+                    <button class="action-icon action-share" onclick="shareDriverLink('${d.name}', '${d.password}')" title="Copier les accès"><i class="fa-solid fa-link"></i></button>
+                    <button class="action-icon action-planning" onclick="openPlanningModal('${d.name}')" title="Voir le planning"><i class="fa-solid fa-calendar-days"></i></button>
+                    <button class="action-icon action-edit" onclick="openEditDriverModal('${d.id}', '${d.password}')" title="Modifier le mot de passe"><i class="fa-solid fa-pen"></i></button>
+                    <button class="action-icon action-delete" onclick="deleteDriver('${d.id}')" title="Supprimer le chauffeur"><i class="fa-solid fa-trash-can"></i></button>
                 </div>
             </td>
         </tr>
     `).join('');
 }
 
-// Fonction de partage des accès Chauffeur
 async function shareDriverLink(name, password) {
     const appUrl = "https://joshuasebag.github.io/bondecommande1/chauffeur.html"; 
     const message = `🚗 BONJOUR ${name},\n\nVoici tes accès pour l'application VTC :\n\n📍 Lien : ${appUrl}\n👤 Identifiant : ${name}\n🔑 Mot de passe : ${password}\n\nBonne route !`;
-    
-    if (navigator.share) { 
-        try { await navigator.share({ text: message }); return; } catch(e) {} 
-    }
-    
-    try { 
-        await navigator.clipboard.writeText(message); 
-        alert("✅ Accès copiés ! Tu peux maintenant les coller pour les envoyer à " + name + "."); 
-    } catch(e) { 
-        alert("Erreur lors de la copie."); 
-    }
+    if (navigator.share) { try { await navigator.share({ text: message }); return; } catch(e) {} }
+    try { await navigator.clipboard.writeText(message); alert("✅ Accès copiés ! Tu peux maintenant les coller pour les envoyer à " + name + "."); } catch(e) { alert("Erreur lors de la copie."); }
 }
 
-// Fonctionnalité Planning
 const planningModal = document.getElementById('planningModal');
-
 function openPlanningModal(driverName) {
     document.getElementById('planningDriverName').textContent = driverName;
     const tbody = document.getElementById('planningTableBody');
-    
-    // Filtrer les courses pour ce chauffeur
     const driverOrders = globalOrders.filter(o => o.driver_name === driverName);
-    
     if (driverOrders.length === 0) {
         tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:30px;">Aucune course assignée.</td></tr>`;
     } else {
         tbody.innerHTML = driverOrders.map(o => {
             let bClass = 'badge-attente'; let sLabel = 'En attente';
             const st = (o.status||'').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-            if (st === 'charge') { bClass = 'badge-charge'; sLabel = 'Pris en charge'; } 
-            else if (st === 'depose' || st === 'termine') { bClass = 'badge-depose'; sLabel = 'Déposé'; }
-            
+            if (st === 'charge') { bClass = 'badge-charge'; sLabel = 'Pris en charge'; } else if (st === 'depose' || st === 'termine') { bClass = 'badge-depose'; sLabel = 'Déposé'; }
             const dF = o.date ? new Date(o.date).toLocaleDateString('fr-FR', {day: '2-digit', month: '2-digit', year: 'numeric'}) : '--/--';
-            
-            return `<tr>
-                <td><strong>${dF}</strong> à ${o.time}</td>
-                <td><div style="font-size:12px; font-weight:500;"><i class="fa-solid fa-circle" style="color:var(--primary); font-size:8px;"></i> ${o.departure}</div><div style="font-size:12px; font-weight:500; margin-top:4px;"><i class="fa-solid fa-location-dot" style="color:var(--danger); font-size:9px;"></i> ${o.destination}</div></td>
-                <td><span class="badge ${bClass}">${sLabel}</span></td>
-            </tr>`;
+            return `<tr><td><strong>${dF}</strong> à ${o.time}</td><td><div style="font-size:12px; font-weight:500;"><i class="fa-solid fa-circle" style="color:var(--primary); font-size:8px;"></i> ${o.departure}</div><div style="font-size:12px; font-weight:500; margin-top:4px;"><i class="fa-solid fa-location-dot" style="color:var(--danger); font-size:9px;"></i> ${o.destination}</div></td><td><span class="badge ${bClass}">${sLabel}</span></td></tr>`;
         }).join('');
     }
     planningModal.style.display = 'flex';
 }
-
 function closePlanningModal() { planningModal.style.display = 'none'; }
 
-// Fonctionnalité Édition Chauffeur
 const editDriverModal = document.getElementById('editDriverModal');
 function openEditDriverModal(id, pass) { document.getElementById('editDriverId').value = id; document.getElementById('editDriverPassword').value = pass; editDriverModal.style.display = 'flex'; }
 function closeEditDriverModal() { editDriverModal.style.display = 'none'; }
@@ -152,14 +116,13 @@ function populateDriverDropdowns() {
     if(document.getElementById('assignedDriver')) document.getElementById('assignedDriver').innerHTML = opts;
     if(document.getElementById('editAssignedDriver')) document.getElementById('editAssignedDriver').innerHTML = opts;
 }
-
 async function deleteDriver(id) { if (confirm("Voulez-vous vraiment supprimer ce chauffeur ?")) { await supabaseClient.from('drivers').delete().eq('id', id); fetchDrivers(); } }
 
 document.getElementById('driverForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const newDriver = { name: document.getElementById('driverName').value.trim(), password: document.getElementById('driverPassword').value.trim() };
     const { error } = await supabaseClient.from('drivers').insert([newDriver]);
-    if (error) { alert("Erreur (Ce nom de chauffeur existe peut-être déjà)."); } else { document.getElementById('driverForm').reset(); fetchDrivers(); }
+    if (error) { alert("Erreur."); } else { document.getElementById('driverForm').reset(); fetchDrivers(); }
 });
 
 // --- VÉHICULES ---
@@ -174,9 +137,7 @@ function renderVehiclesList() {
     if (!tbody) return;
     if (allVehicles.length === 0) { tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:40px;">Aucun véhicule.</td></tr>`; return; }
     tbody.innerHTML = '';
-    allVehicles.forEach(v => {
-        tbody.innerHTML += `<tr><td><strong>${v.model}</strong></td><td><code style="background:#f1f5f9; padding:4px 8px; border-radius:4px;">${v.plate}</code></td><td>${v.phone}</td><td><button class="action-icon action-delete" onclick="deleteVehicle('${v.id}')"><i class="fa-solid fa-trash-can"></i></button></td></tr>`;
-    });
+    allVehicles.forEach(v => { tbody.innerHTML += `<tr><td><strong>${v.model}</strong></td><td><code style="background:#f1f5f9; padding:4px 8px; border-radius:4px;">${v.plate}</code></td><td>${v.phone}</td><td><button class="action-icon action-delete" onclick="deleteVehicle('${v.id}')"><i class="fa-solid fa-trash-can"></i></button></td></tr>`; });
 }
 
 function populateVehicleDropdowns() {
@@ -184,7 +145,6 @@ function populateVehicleDropdowns() {
     if(document.getElementById('assignedVehicle')) document.getElementById('assignedVehicle').innerHTML = opts;
     if(document.getElementById('editAssignedVehicle')) document.getElementById('editAssignedVehicle').innerHTML = opts;
 }
-
 async function deleteVehicle(id) { if (confirm("Supprimer ce véhicule ?")) { await supabaseClient.from('vehicles').delete().eq('id', id); fetchVehicles(); } }
 
 document.getElementById('vehicleForm')?.addEventListener('submit', async (e) => {
@@ -226,6 +186,56 @@ function calculateDriverStats() {
     });
 }
 
+// --- BASE CLIENTS AUTOMATIQUE ---
+function renderClientsList() {
+    const tbody = document.getElementById('clientsTableBody');
+    if (!tbody) return;
+
+    const clientsMap = {};
+    
+    // On extrait tous les clients des commandes
+    globalOrders.forEach(o => {
+        const phone = (o.client_phone || '').trim();
+        const name = (o.client_name || 'Inconnu').trim();
+        
+        // S'il n'y a ni nom ni téléphone, on ignore
+        if (!phone && name === 'Inconnu') return;
+        
+        // On crée une clé unique (par exemple le numéro de téléphone pour regrouper la même personne)
+        const key = phone || name.toLowerCase();
+
+        if (!clientsMap[key]) {
+            clientsMap[key] = { name: name, phone: phone, rides: 0, revenue: 0 };
+        }
+
+        clientsMap[key].rides += 1;
+        
+        // On ajoute le CA seulement si la course est terminée
+        const st = (o.status || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+        if (st === 'depose' || st === 'termine') {
+            clientsMap[key].revenue += (parseFloat(o.price) || 0);
+        }
+    });
+
+    // On transforme en tableau et on trie du meilleur client au moins bon (par CA)
+    const clientsArray = Object.values(clientsMap).sort((a, b) => b.revenue - a.revenue);
+
+    if (clientsArray.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 40px;">Aucun client dans l'historique.</td></tr>`;
+        return;
+    }
+
+    // Affichage dans le tableau
+    tbody.innerHTML = clientsArray.map(c => `
+        <tr>
+            <td><strong><i class="fa-solid fa-user" style="color:var(--text-muted); margin-right:8px;"></i> ${c.name}</strong></td>
+            <td>${c.phone ? `<a href="tel:${c.phone}" style="color:var(--info); font-weight:500; text-decoration:none;"><i class="fa-solid fa-phone" style="font-size:12px; margin-right:5px;"></i>${c.phone}</a>` : '<span style="color:#ccc;">Non renseigné</span>'}</td>
+            <td><span class="badge" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd;">${c.rides} course(s)</span></td>
+            <td><strong style="color:var(--success);">${c.revenue.toFixed(2)} €</strong></td>
+        </tr>
+    `).join('');
+}
+
 // --- COURSES ---
 function generateMissionText(order) {
     const fDate = order.date ? new Date(order.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : '';
@@ -248,6 +258,7 @@ const fetchAndDisplayOrders = async () => {
     if (!error) {
         globalOrders = orders || []; 
         calculateDriverStats();
+        renderClientsList(); // Met à jour la liste des clients automatiquement
         
         const tbody = document.getElementById('ordersTableBody');
         if (!tbody) return;
@@ -285,7 +296,6 @@ function openEditModal(d) {
 }
 function closeEditModal() { editModal.style.display = 'none'; }
 
-// Gestion de la fermeture des modales au clic à l'extérieur
 window.onclick = e => { 
     if (e.target == editModal) closeEditModal(); 
     if (e.target == editDriverModal) closeEditDriverModal(); 
