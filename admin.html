@@ -19,6 +19,7 @@
             --success: #10b981;
             --warning: #f59e0b;
             --danger: #ef4444;
+            --info: #3b82f6;
             --bg: #f1f5f9;
             --nav-bg: #0f172a;
             --card-bg: #ffffff;
@@ -28,132 +29,33 @@
             --radius: 10px;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        }
-
-        body {
-            background-color: var(--bg);
-            color: var(--text-main);
-            -webkit-font-smoothing: antialiased;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background-color: var(--bg); color: var(--text-main); -webkit-font-smoothing: antialiased; }
 
         /* --- BARRE DE NAVIGATION HAUTE --- */
-        .top-nav {
-            background-color: var(--nav-bg);
-            color: white;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 32px;
-            height: 70px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            position: sticky;
-            top: 0;
-            z-index: 50;
-        }
-
-        .brand {
-            font-size: 20px;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
+        .top-nav { background-color: var(--nav-bg); color: white; display: flex; justify-content: space-between; align-items: center; padding: 0 32px; height: 70px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 50; }
+        .brand { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 12px; }
         .brand i { color: var(--primary); font-size: 24px; }
-
-        .nav-tabs {
-            display: flex;
-            height: 100%;
-        }
-
-        .nav-tab {
-            padding: 0 24px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: #cbd5e1;
-            font-weight: 600;
-            font-size: 15px;
-            cursor: pointer;
-            border-bottom: 3px solid transparent;
-            transition: all 0.2s;
-        }
-
-        .nav-tab:hover, .nav-tab.active {
-            color: white;
-            background-color: rgba(255,255,255,0.05);
-        }
-
+        .nav-tabs { display: flex; height: 100%; }
+        .nav-tab { padding: 0 24px; display: flex; align-items: center; gap: 10px; color: #cbd5e1; font-weight: 600; font-size: 15px; cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s; }
+        .nav-tab:hover, .nav-tab.active { color: white; background-color: rgba(255,255,255,0.05); }
         .nav-tab.active { border-bottom-color: var(--primary); }
-
-        .nav-actions {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .status-dot {
-            width: 10px; height: 10px; background-color: #10b981; border-radius: 50%;
-            display: inline-block; box-shadow: 0 0 8px #10b981;
-        }
-
-        .logout-btn {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.2);
-            color: #fca5a5;
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 600;
-            transition: all 0.2s;
-        }
+        .nav-actions { display: flex; align-items: center; gap: 20px; }
+        .status-dot { width: 10px; height: 10px; background-color: #10b981; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #10b981; }
+        .logout-btn { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #fca5a5; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s; }
         .logout-btn:hover { background: rgba(239, 68, 68, 0.2); color: white; }
 
         /* --- CONTENU PRINCIPAL --- */
-        .main-content {
-            padding: 30px 32px;
-            max-width: 1800px;
-            margin: 0 auto;
-        }
-
+        .main-content { padding: 30px 32px; max-width: 1800px; margin: 0 auto; }
         .view-section { display: none; animation: fadeIn 0.2s ease; }
         .view-section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
         /* --- GRID COMPACTE --- */
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 24px;
-        }
-        @media (min-width: 1100px) {
-            .grid { grid-template-columns: 380px 1fr; } 
-        }
-
-        .card {
-            background: var(--card-bg);
-            border-radius: var(--radius);
-            padding: 24px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            border: 1px solid var(--border);
-        }
-
-        .card-title {
-            font-size: 18px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-weight: 700;
-            padding-bottom: 12px;
-            border-bottom: 1px solid var(--border);
-        }
+        .grid { display: grid; grid-template-columns: 1fr; gap: 24px; }
+        @media (min-width: 1100px) { .grid { grid-template-columns: 380px 1fr; } }
+        .card { background: var(--card-bg); border-radius: var(--radius); padding: 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid var(--border); }
+        .card-title { font-size: 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-weight: 700; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
 
         /* --- STATS CA --- */
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
@@ -165,12 +67,9 @@
         input, select, textarea { width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; background-color: #f8fafc; outline: none; transition: border-color 0.2s; }
         input:focus, select:focus, textarea:focus { background-color: #fff; border-color: var(--primary); }
         .row { display: flex; gap: 16px; }
-        
         .row > .form-group { flex: 1; min-width: 0; }
-        
         button.btn { width: 100%; padding: 14px; background-color: var(--primary); color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; }
         button.btn:hover { background-color: var(--primary-hover); }
-
         .suggestions { position: absolute; background: white; border: 1px solid var(--border); border-radius: 8px; width: 100%; z-index: 100; max-height: 200px; overflow-y: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-top: 4px; }
         .suggestion-item { padding: 10px 14px; cursor: pointer; font-size: 14px; }
         .suggestion-item:hover { background-color: #f1f5f9; color: var(--primary); }
@@ -181,7 +80,6 @@
         th { background-color: #f8fafc; padding: 14px 16px; font-weight: 600; color: var(--text-muted); border-bottom: 1px solid var(--border); font-size: 12px; text-transform: uppercase; }
         td { padding: 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
         tr:hover td { background-color: #f8fafc; }
-
         .badge { display: inline-flex; align-items: center; padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
         .badge-attente { background-color: #fef7e0; color: #b45309; border: 1px solid #fde68a; }
         .badge-charge { background-color: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
@@ -193,15 +91,14 @@
         .action-edit { color: var(--warning); }
         .action-delete { color: var(--danger); }
         .action-share { color: var(--primary); }
+        .action-planning { color: var(--info); }
 
         /* --- MODAL --- */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(15,23,42,0.6); align-items: center; justify-content: center; padding: 20px; }
         .modal-content { background-color: var(--card-bg); border-radius: var(--radius); width: 100%; max-width: 650px; padding: 30px; position: relative; max-height: 90vh; overflow-y: auto; }
         .modal-close { position: absolute; top: 20px; right: 20px; font-size: 24px; cursor: pointer; color: var(--text-muted); }
 
-        /* ========================================= */
         /* OPTIMISATIONS MOBILES */
-        /* ========================================= */
         @media (max-width: 900px) {
             .top-nav { flex-wrap: wrap; height: auto; padding: 12px 16px; }
             .brand { order: 1; width: auto; font-size: 18px; }
@@ -213,7 +110,6 @@
             .main-content { padding: 15px 12px; }
             .card { padding: 20px 16px; }
         }
-
         @media (max-width: 600px) {
             .row { flex-direction: column; gap: 0; }
             .row > .form-group { margin-bottom: 16px; width: 100%; }
@@ -227,16 +123,12 @@
 
     <!-- BARRE DE NAVIGATION HAUTE -->
     <nav class="top-nav">
-        <div class="brand">
-            <i class="fa-solid fa-compass"></i> Admin VTC
-        </div>
+        <div class="brand"><i class="fa-solid fa-compass"></i> Admin VTC</div>
         <div class="nav-tabs">
-            <div class="nav-tab active" onclick="switchView('orders-view', this)">
-                <i class="fa-solid fa-list-check"></i> Commandes
-            </div>
-            <div class="nav-tab" onclick="switchView('dashboard-view', this)">
-                <i class="fa-solid fa-chart-pie"></i> Équipe, CA & Flotte
-            </div>
+            <div class="nav-tab active" onclick="switchView('orders-view', this)"><i class="fa-solid fa-list-check"></i> Commandes</div>
+            <div class="nav-tab" onclick="switchView('dashboard-view', this)"><i class="fa-solid fa-chart-pie"></i> Équipe, CA & Flotte</div>
+            <!-- NOUVEL ONGLET CLIENTS -->
+            <div class="nav-tab" onclick="switchView('clients-view', this)"><i class="fa-solid fa-address-book"></i> Clients</div>
         </div>
         <div class="nav-actions">
             <span style="font-size: 14px; font-weight: 500; color: #cbd5e1;"><span class="status-dot" style="margin-right: 6px;"></span> En ligne</span>
@@ -253,15 +145,10 @@
                 
                 <!-- Colonne Gauche : Formulaire -->
                 <div class="card">
-                    <div class="card-title">
-                        <i class="fa-solid fa-plus" style="color: var(--primary);"></i> Nouveau Bon
-                    </div>
+                    <div class="card-title"><i class="fa-solid fa-plus" style="color: var(--primary);"></i> Nouveau Bon</div>
                     <form id="orderForm">
                         <div class="row">
-                            <div class="form-group">
-                                <label>Service</label>
-                                <select id="serviceType" required><option value="Transfert">Transfert</option><option value="Mise à Dispo">Mise à Dispo</option></select>
-                            </div>
+                            <div class="form-group"><label>Service</label><select id="serviceType" required><option value="Transfert">Transfert</option><option value="Mise à Dispo">Mise à Dispo</option></select></div>
                             <div class="form-group"><label>Tarif (€)</label><input type="number" id="price" required></div>
                         </div>
                         <div class="row">
@@ -288,38 +175,22 @@
 
                 <!-- Colonne Droite : Le tableau -->
                 <div class="card" style="padding: 0; overflow: hidden;">
-                    <div class="card-title" style="margin: 24px 24px 0;">
-                        <i class="fa-solid fa-list" style="color: var(--text-main);"></i> Suivi des Missions
-                    </div>
+                    <div class="card-title" style="margin: 24px 24px 0;"><i class="fa-solid fa-list" style="color: var(--text-main);"></i> Suivi des Missions</div>
                     <div class="table-container" style="border: none; border-radius: 0; margin-top: 16px;">
                         <table>
-                            <thead>
-                                <tr>
-                                    <th>Date/Heure</th>
-                                    <th>Trajet & Client</th>
-                                    <th>Chauffeur & Véhicule</th>
-                                    <th>Statut</th>
-                                    <th>Act.</th>
-                                </tr>
-                            </thead>
-                            <tbody id="ordersTableBody">
-                                <tr><td colspan="5" style="text-align:center; padding: 40px;">Chargement...</td></tr>
-                            </tbody>
+                            <thead><tr><th>Date/Heure</th><th>Trajet & Client</th><th>Chauffeur & Véhicule</th><th>Statut</th><th>Act.</th></tr></thead>
+                            <tbody id="ordersTableBody"><tr><td colspan="5" style="text-align:center; padding: 40px;">Chargement...</td></tr></tbody>
                         </table>
                     </div>
                 </div>
-
             </div>
         </div>
 
-        <!-- VUE 2 : TABLEAU DE BORD (CA, Équipe & Flotte) -->
+        <!-- VUE 2 : TABLEAU DE BORD -->
         <div id="dashboard-view" class="view-section">
-            
             <div class="card" style="margin-bottom: 24px;">
                 <div class="card-title"><i class="fa-solid fa-chart-line" style="color: var(--primary);"></i> Chiffre d'Affaires</div>
-                <div class="stats-grid" id="driverStatsContainer">
-                    <div style="font-size:14px; color:#64748b;">Calcul en cours...</div>
-                </div>
+                <div class="stats-grid" id="driverStatsContainer"><div style="font-size:14px; color:#64748b;">Calcul en cours...</div></div>
             </div>
 
             <!-- CHAUFFEURS -->
@@ -366,8 +237,35 @@
                     </div>
                 </div>
             </div>
-
         </div>
+
+        <!-- NOUVELLE VUE 3 : BASE CLIENTS -->
+        <div id="clients-view" class="view-section">
+            <div class="card" style="padding: 0; overflow: hidden;">
+                <div class="card-title" style="margin: 24px 24px 0;">
+                    <i class="fa-solid fa-address-book" style="color: var(--primary);"></i> Carnet d'Adresses Automatique
+                </div>
+                <div style="padding: 0 24px; font-size: 13px; color: var(--text-muted); margin-bottom: 10px;">
+                    Cette liste est générée automatiquement à partir de l'historique des commandes.
+                </div>
+                <div class="table-container" style="border: none; border-radius: 0;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nom du Client</th>
+                                <th>Téléphone</th>
+                                <th>Courses effectuées</th>
+                                <th>CA Généré</th>
+                            </tr>
+                        </thead>
+                        <tbody id="clientsTableBody">
+                            <tr><td colspan="4" style="text-align:center; padding: 40px;">Chargement...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- MODAL DE MODIFICATION DES MISSIONS -->
@@ -375,7 +273,6 @@
         <div class="modal-content">
             <span class="modal-close" onclick="document.getElementById('editModal').style.display='none'"><i class="fa-solid fa-xmark"></i></span>
             <div class="card-title"><i class="fa-solid fa-pen" style="color: var(--primary);"></i> Éditer la Course</div>
-            
             <form id="editOrderForm">
                 <input type="hidden" id="editOrderId">
                 <div class="row">
@@ -405,22 +302,33 @@
         <div class="modal-content" style="max-width: 400px;">
             <span class="modal-close" onclick="document.getElementById('editDriverModal').style.display='none'"><i class="fa-solid fa-xmark"></i></span>
             <div class="card-title"><i class="fa-solid fa-pen" style="color: var(--primary);"></i> Modifier le mot de passe</div>
-            
             <form id="editDriverForm">
                 <input type="hidden" id="editDriverId">
-                <div class="form-group">
-                    <label>Nouveau mot de passe</label>
-                    <input type="text" id="editDriverPassword" required>
-                </div>
+                <div class="form-group"><label>Nouveau mot de passe</label><input type="text" id="editDriverPassword" required></div>
                 <button type="submit" class="btn" style="margin-top: 10px;">Enregistrer</button>
             </form>
+        </div>
+    </div>
+
+    <!-- MODAL PLANNING CHAUFFEUR -->
+    <div id="planningModal" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <span class="modal-close" onclick="document.getElementById('planningModal').style.display='none'"><i class="fa-solid fa-xmark"></i></span>
+            <div class="card-title"><i class="fa-solid fa-calendar-days" style="color: var(--info);"></i> Planning de <span id="planningDriverName" style="margin-left: 8px;"></span></div>
+            <div class="table-container" style="border: none; border-radius: 0; margin-top: 16px; max-height: 400px; overflow-y: auto;">
+                <table style="min-width: 600px;">
+                    <thead><tr><th>Date & Heure</th><th>Trajet</th><th>Statut</th></tr></thead>
+                    <tbody id="planningTableBody">
+                        <!-- Le planning s'affichera ici -->
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
     <!-- SCRIPT TABS & LOGOUT -->
     <script>
         function logout() { sessionStorage.removeItem('admin_connected'); window.location.href = 'login.html'; }
-        
         function switchView(viewId, element) {
             document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
@@ -428,9 +336,7 @@
             element.classList.add('active');
         }
     </script>
-
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.js"></script>
     <script src="admin.js"></script>
-
 </body>
 </html>
