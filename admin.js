@@ -50,7 +50,7 @@ const fetchDrivers = async () => {
 function renderDriversList() {
     const tbody = document.getElementById('driversTableBody');
     if (!tbody) return;
-    tbody.innerHTML = allDrivers.length === 0 ? `<tr><td colspan="3" style="text-align:center;">Aucun chauffeur.</td></tr>` : '';
+    tbody.innerHTML = allDrivers.length === 0 ? `<tr><td colspan="3" style="text-align:center; padding:20px;">Aucun chauffeur.</td></tr>` : '';
     allDrivers.forEach(d => {
         tbody.innerHTML += `<tr>
             <td><strong>${d.name}</strong></td>
@@ -91,7 +91,7 @@ const fetchVehicles = async () => {
 function renderVehiclesList() {
     const tbody = document.getElementById('vehiclesTableBody');
     if (!tbody) return;
-    tbody.innerHTML = allVehicles.length === 0 ? `<tr><td colspan="4" style="text-align:center;">Aucun véhicule.</td></tr>` : '';
+    tbody.innerHTML = allVehicles.length === 0 ? `<tr><td colspan="4" style="text-align:center; padding:20px;">Aucun véhicule.</td></tr>` : '';
     allVehicles.forEach(v => {
         tbody.innerHTML += `<tr>
             <td><strong>${v.model}</strong></td>
@@ -154,8 +154,10 @@ function calculateDriverStats() {
 // --- COURSES ---
 function generateMissionText(order) {
     const fDate = order.date ? new Date(order.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : '';
+    const creationDate = order.created_at ? new Date(order.created_at).toLocaleDateString('fr-FR') : new Date().toLocaleDateString('fr-FR');
+    const creationTime = order.created_at ? new Date(order.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '21h00';
     const v = allVehicles.find(v => v.id === order.vehicle_id);
-    return `VOTRE MISSION - SERVICE COMMANDÉ : ${order.service_type||'VAN'}\n-------------------------\nDate et heure : ${fDate} à ${order.time||'--:--'}\nDépart : ${order.departure||''}\nDestination : ${order.destination||''}\n\nClient : ${order.client_name||''} - ${order.client_phone||''} (${order.passengers||1} pax)\nChauffeur : ${order.driver_name||''}\n${v?v.phone:''}\n${v?v.model:''}\n${v?v.plate:''}\n\nTarif : ${order.price||'0'}€ ttc PP\nInfos : ${order.info||'Aucune'}\n-------------------------\nFernand Michel Sebag`;
+    return `VOTRE MISSION - SERVICE COMMANDÉ : ${order.service_type||'VAN'}\n-------------------------\nDate et heure : ${fDate} à ${order.time||'--:--'}\nDépart : ${order.departure||''}\nDestination : ${order.destination||''}\n\nClient : ${order.client_name||''} - ${order.client_phone||''} (${order.passengers||1} pax)\nChauffeur : ${order.driver_name||''}\n${v?v.phone:''}\n${v?v.model:''}\n${v?v.plate:''}\n\nTarif : ${order.price||'0'}€ ttc PP\nInfos : ${order.info||'Aucune'}\nCommandé le ${creationDate} à ${creationTime}\n-------------------------\nFernand Michel Sebag`;
 }
 
 async function shareMissionFromAdmin(orderData) {
@@ -224,4 +226,4 @@ const init = async () => {
             .subscribe();
     }
 };
-init();v
+init();
