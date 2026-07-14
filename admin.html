@@ -84,12 +84,16 @@
             transition: all 0.2s;
         }
 
-        .nav-tab:hover, .nav-tab.active {
+        .nav-tab:hover {
             color: white;
             background-color: rgba(255,255,255,0.05);
         }
 
-        .nav-tab.active { border-bottom-color: var(--primary); }
+        .nav-tab.active {
+            color: white;
+            border-bottom-color: var(--primary);
+            background-color: rgba(255,255,255,0.05);
+        }
 
         .nav-actions {
             display: flex;
@@ -126,7 +130,7 @@
         .view-section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* --- GRID COMPACTE (Desktop) --- */
+        /* --- GRID COMPACTE --- */
         .grid {
             display: grid;
             grid-template-columns: 1fr;
@@ -165,7 +169,9 @@
         input, select, textarea { width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; background-color: #f8fafc; outline: none; transition: border-color 0.2s; }
         input:focus, select:focus, textarea:focus { background-color: #fff; border-color: var(--primary); }
         .row { display: flex; gap: 16px; }
-        .row > .form-group { flex: 1; }
+        
+        /* CORRECTION MAGIQUE POUR L'OVERFLOW DES INPUTS SUR MOBILE */
+        .row > .form-group { flex: 1; min-width: 0; }
         
         button.btn { width: 100%; padding: 14px; background-color: var(--primary); color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; }
         button.btn:hover { background-color: var(--primary-hover); }
@@ -176,7 +182,7 @@
 
         /* --- TABLEAUX --- */
         .table-container { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); -webkit-overflow-scrolling: touch; }
-        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; min-width: 800px; /* Force le scroll horizontal sur mobile */ }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; min-width: 800px; }
         th { background-color: #f8fafc; padding: 14px 16px; font-weight: 600; color: var(--text-muted); border-bottom: 1px solid var(--border); font-size: 12px; text-transform: uppercase; }
         td { padding: 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
         tr:hover td { background-color: #f8fafc; }
@@ -199,36 +205,43 @@
         .modal-close { position: absolute; top: 20px; right: 20px; font-size: 24px; cursor: pointer; color: var(--text-muted); }
 
         /* ========================================= */
-        /* OPTIMISATIONS POUR MOBILES ET TABLETTES   */
+        /* OPTIMISATIONS MOBILES (iPhones, Androids) */
         /* ========================================= */
         @media (max-width: 900px) {
             .top-nav {
-                flex-wrap: wrap;
+                flex-wrap: wrap; /* Autorise le passage à la ligne */
                 height: auto;
-                padding: 15px 20px;
+                padding: 12px 16px;
             }
-            .brand { width: 50%; font-size: 18px; }
-            .nav-actions { width: 50%; justify-content: flex-end; gap: 12px; }
-            .nav-actions span { display: none; /* Masque le "En ligne" sur mobile pour gagner de la place */ }
+            /* L'ordre des éléments pour garantir le bon empilement */
+            .brand { order: 1; width: auto; font-size: 18px; }
+            .nav-actions { order: 2; margin-left: auto; width: auto; gap: 10px; }
+            .nav-actions span { display: none; /* Cache "En ligne" sur tel */ }
+            .logout-btn { padding: 8px 12px; font-size: 12px; }
+            
+            /* Les onglets passent au second niveau sur toute la largeur */
             .nav-tabs {
+                order: 3;
                 width: 100%;
                 justify-content: center;
-                margin-top: 15px;
-                padding-top: 10px;
+                margin-top: 12px;
+                padding-top: 8px;
                 border-top: 1px solid rgba(255,255,255,0.1);
             }
-            .nav-tab { padding: 10px 16px; font-size: 14px; }
-            .main-content { padding: 20px 15px; }
-            .card { padding: 16px; }
-            .card-title { font-size: 16px; margin-bottom: 16px; }
+            .nav-tab { padding: 8px 16px; font-size: 14px; }
+            
+            .main-content { padding: 15px 12px; }
+            .card { padding: 20px 16px; }
         }
 
         @media (max-width: 600px) {
-            /* Empile les champs de formulaire sur mobile */
+            /* Empilement vertical des champs du formulaire pour la saisie au doigt */
             .row { flex-direction: column; gap: 0; }
-            .row > .form-group { margin-bottom: 16px; }
-            .modal-content { padding: 20px; }
-            .action-icon { width: 30px; height: 30px; font-size: 13px; }
+            .row > .form-group { margin-bottom: 16px; width: 100%; }
+            
+            /* Ajustement des actions */
+            .action-icon { width: 34px; height: 34px; font-size: 13px; }
+            table { font-size: 13px; }
         }
     </style>
 </head>
@@ -331,7 +344,7 @@
                 </div>
             </div>
 
-            <div class="grid">
+            <div class="grid" style="grid-template-columns: 380px 1fr;">
                 <div class="card">
                     <div class="card-title"><i class="fa-solid fa-car" style="color: var(--success);"></i> Ajout Véhicule</div>
                     <form id="vehicleForm">
