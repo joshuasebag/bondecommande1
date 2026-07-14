@@ -370,10 +370,10 @@
         </div>
     </div>
 
-    <!-- MODAL DE MODIFICATION -->
+    <!-- MODAL DE MODIFICATION DES MISSIONS -->
     <div id="editModal" class="modal">
         <div class="modal-content">
-            <span class="modal-close" onclick="closeEditModal()"><i class="fa-solid fa-xmark"></i></span>
+            <span class="modal-close" onclick="document.getElementById('editModal').style.display='none'"><i class="fa-solid fa-xmark"></i></span>
             <div class="card-title"><i class="fa-solid fa-pen" style="color: var(--primary);"></i> Éditer la Course</div>
             
             <form id="editOrderForm">
@@ -396,6 +396,23 @@
                 </div>
                 <div class="form-group"><label>Statut</label><select id="editStatus" required><option value="attente">En attente</option><option value="charge">Client à bord</option><option value="depose">Terminé</option></select></div>
                 <button type="submit" class="btn" style="margin-top: 10px;">Mettre à jour</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DE MODIFICATION DU MOT DE PASSE CHAUFFEUR -->
+    <div id="editDriverModal" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <span class="modal-close" onclick="document.getElementById('editDriverModal').style.display='none'"><i class="fa-solid fa-xmark"></i></span>
+            <div class="card-title"><i class="fa-solid fa-pen" style="color: var(--primary);"></i> Modifier le mot de passe</div>
+            
+            <form id="editDriverForm">
+                <input type="hidden" id="editDriverId">
+                <div class="form-group">
+                    <label>Nouveau mot de passe</label>
+                    <input type="text" id="editDriverPassword" required>
+                </div>
+                <button type="submit" class="btn" style="margin-top: 10px;">Enregistrer</button>
             </form>
         </div>
     </div>
