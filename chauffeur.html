@@ -3,26 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Espace Chauffeur</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <title>Chauffeur VTC</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root { --primary: #2563eb; --bg: #fdfcf9; --text-main: #1e293b; --border: #e2e8f0; --success: #10b981; --danger: #ef4444; --info: #3b82f6; }
-        body { background-color: var(--bg); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 20px; color: var(--text-main); }
-        .card { background: white; border: 1px solid var(--border); border-radius: 16px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        .btn { display: inline-block; padding: 12px; border-radius: 10px; border: 1px solid var(--border); background: #fff; text-decoration: none; color: #333; font-weight: 600; font-size: 13px; cursor: pointer; }
-        .badge { padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
-        .badge-attente { background: #fef7e0; color: #b45309; }
-        .badge-charge { background: #e0f2fe; color: #0369a1; }
-        .badge-depose { background: #e6f4ea; color: #15803d; }
+        :root { --primary: #2563eb; --bg: #0f172a; --card-bg: #1e293b; --text-primary: #f8fafc; --text-secondary: #94a3b8; --border: #334155; --success: #10b981; --warning: #f59e0b; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg); color: var(--text-primary); }
+
+        /* Écran de Connexion */
+        #loginSection { height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
+        .login-card { background: var(--card-bg); padding: 30px 20px; border-radius: 16px; border: 1px solid var(--border); width: 100%; max-width: 400px; text-align: center; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5); }
+        .login-card h2 { margin-bottom: 20px; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .login-card input { width: 100%; padding: 14px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--border); background: #0f172a; color: white; font-size: 16px; outline: none; }
+        .login-card input:focus { border-color: var(--primary); }
+        .login-card button { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
+
+        /* Application Principale */
+        #appSection { display: none; padding: 15px; max-width: 600px; margin: 0 auto; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+        h1 { font-size: 20px; display: flex; align-items: center; gap: 10px; }
+        .driver-info-bar { background: rgba(37, 99, 235, 0.1); border: 1px solid rgba(37, 99, 235, 0.2); border-radius: 8px; padding: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+        
+        .course-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 18px; margin-bottom: 15px; }
+        .course-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px dashed var(--border); padding-bottom: 10px; }
+        .course-time { font-size: 15px; font-weight: bold; color: var(--warning); }
+        .badge-status { padding: 4px 8px; border-radius: 9999px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
+        .status-attente { background-color: #7f1d1d; color: #fca5a5; } .status-charge { background-color: #1e3a8a; color: #93c5fd; } .status-depose { background-color: #064e3b; color: #6ee7b7; }
+        
+        .address-block { margin-bottom: 15px; background: #111827; padding: 10px; border-radius: 6px; font-size: 13px; line-height: 1.5; }
+        .client-info { font-size: 14px; margin-bottom: 15px; color: var(--text-secondary); }
+        .course-price { font-size: 18px; font-weight: bold; color: var(--success); }
+        
+        .btn-action { display: flex; justify-content: center; align-items: center; gap: 8px; width: 100%; padding: 12px; border: none; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer; color: white; }
+        .btn-pickup { background-color: #2563eb; } .btn-dropoff { background-color: #10b981; }
+        .no-courses { text-align: center; color: var(--text-secondary); padding: 40px 20px; }
     </style>
 </head>
 <body>
-    <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
-        <h2 id="driverWelcome">Mes Courses</h2>
-        <button onclick="logout()" style="background:none; border:none; font-size:20px; cursor:pointer;"><i class="fa-solid fa-right-from-bracket"></i></button>
+
+    <!-- SECTION CONNEXION -->
+    <div id="loginSection">
+        <div class="login-card">
+            <h2><i class="fa-solid fa-steering-wheel"></i> Accès Chauffeur</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 14px;">Connectez-vous pour voir vos missions.</p>
+            <form id="driverLoginForm">
+                <input type="text" id="loginName" placeholder="Identifiant (Nom)" required>
+                <input type="password" id="loginPassword" placeholder="Mot de passe" required>
+                <button type="submit"><i class="fa-solid fa-right-to-bracket"></i> Se connecter</button>
+            </form>
+        </div>
     </div>
-    
-    <div id="chauffeurOrdersContainer"></div>
+
+    <!-- SECTION APPLICATION -->
+    <div id="appSection">
+        <header>
+            <h1><i class="fa-solid fa-calendar-days"></i> Mon Planning</h1>
+            <button onclick="logoutDriver()" style="background:none; border:none; color:#ef4444; font-weight:bold; cursor:pointer;"><i class="fa-solid fa-power-off"></i> Quitter</button>
+        </header>
+        <div class="driver-info-bar">
+            <span>Connecté : <strong id="displayDriverName">...</strong></span>
+            <span style="color: var(--success);"><i class="fa-solid fa-circle-user"></i> Actif</span>
+        </div>
+        <div id="coursesContainer"><div class="no-courses">Chargement...</div></div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.js"></script>
     <script src="chauffeur.js"></script>
