@@ -1,57 +1,71 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+    <script>if (sessionStorage.getItem('admin_connected') !== 'true') window.location.href = 'login.html';</script>
     <meta charset="UTF-8">
-    <title>Console Admin</title>
+    <title>Console Admin VTC</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { font-family: sans-serif; background: #f1f5f9; padding: 20px; }
-        .grid { display: grid; grid-template-columns: 400px 1fr; gap: 20px; max-width: 1600px; margin: 0 auto; }
+        :root { --primary: #2563eb; --success: #10b981; --nav: #0f172a; --bg: #f1f5f9; }
+        body { font-family: sans-serif; background: var(--bg); margin:0; }
+        .top-nav { background: var(--nav); color: white; display: flex; align-items: center; padding: 0 20px; height: 60px; }
+        .nav-tab { padding: 0 20px; color: #94a3b8; cursor: pointer; }
+        .nav-tab.active { color: white; border-bottom: 2px solid var(--primary); height: 100%; display: flex; align-items: center; }
+        .content { padding: 20px; max-width: 1400px; margin: auto; }
+        .view { display: none; } .view.active { display: block; }
         .card { background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 20px; }
-        .title { font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-        input { width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; }
-        button { padding: 8px 15px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .card-title { font-weight: bold; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        input, select { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #cbd5e1; border-radius: 4px; }
+        button { padding: 10px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; }
         table { width: 100%; border-collapse: collapse; }
-        td, th { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
-        .edit-btn { background: #f59e0b; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+        td, th { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
     </style>
 </head>
 <body>
-    <div class="grid">
-        <!-- Colonne Gauche -->
-        <div>
-            <div class="card">
-                <div class="title">Chauffeurs</div>
-                <form id="driverForm"><input type="text" id="dName" placeholder="Nom" required><input type="text" id="dPass" placeholder="MDP" required><button type="submit">Ajouter</button></form>
-                <table><tbody id="dBody"></tbody></table>
-            </div>
-            <div class="card">
-                <div class="title">Véhicules</div>
-                <form id="vehForm"><input type="text" id="vModel" placeholder="Modèle" required><input type="text" id="vPlate" placeholder="Plaque" required><button type="submit">Ajouter</button></form>
-                <table><tbody id="vBody"></tbody></table>
+    <nav class="top-nav">
+        <div style="font-weight:bold; margin-right:40px;">Admin VTC</div>
+        <div class="nav-tabs" style="display:flex;">
+            <div class="nav-tab active" onclick="switchView('v1', this)">Commandes</div>
+            <div class="nav-tab" onclick="switchView('v2', this)">CA & Flotte</div>
+        </div>
+    </nav>
+    <div class="content">
+        <div id="v1" class="view active">
+            <div class="grid">
+                <div class="card">
+                    <div class="card-title">Nouveau Bon</div>
+                    <form id="orderForm"><input type="text" id="dep" placeholder="Départ" required><input type="text" id="dest" placeholder="Destination" required><input type="text" id="driver" placeholder="Chauffeur" required><button type="submit">Ajouter</button></form>
+                </div>
+                <div class="card"><table><thead><tr><th>Trajet</th><th>Chauffeur</th></tr></thead><tbody id="oBody"></tbody></table></div>
             </div>
         </div>
-        <!-- Colonne Droite -->
-        <div>
-            <div class="card">
-                <div class="title">CA Chauffeurs</div>
-                <div id="stats" style="display:flex; gap:10px;"></div>
-            </div>
-            <div class="card">
-                <div class="title">Courses</div>
-                <table><thead><tr><th>Date</th><th>Trajet</th><th>Chauffeur</th><th>Statut</th></tr></thead><tbody id="oBody"></tbody></table>
+        <div id="v2" class="view">
+            <div class="card" id="stats"></div>
+            <div class="grid">
+                <div class="card">
+                    <div class="card-title">Chauffeurs</div>
+                    <form id="driverForm"><input type="text" id="dName" placeholder="Nom" required><input type="text" id="dPass" placeholder="MDP" required><button type="submit">Ajouter</button></form>
+                    <table><tbody id="dBody"></tbody></table>
+                </div>
+                <div class="card">
+                    <div class="card-title">Véhicules</div>
+                    <table><tbody id="vBody"></tbody></table>
+                </div>
             </div>
         </div>
     </div>
-    <!-- Modal -->
     <div id="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
-        <div style="background:white; padding:20px; border-radius:8px;">
-            <h3>Modifier MDP</h3>
-            <input type="hidden" id="editId"><input type="text" id="editPass" style="margin:10px 0;">
-            <button onclick="savePass()">Enregistrer</button>
-        </div>
+        <div style="background:white; padding:20px; border-radius:8px;"><h3>Changer MDP</h3><input type="hidden" id="editId"><input type="text" id="editPass"><button onclick="savePass()">Sauvegarder</button></div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="admin.js"></script>
+    <script>
+        function switchView(v, e) {
+            document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(el=>el.classList.remove('active'));
+            document.getElementById(v).classList.add('active'); e.classList.add('active');
+        }
+    </script>
 </body>
 </html>
