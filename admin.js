@@ -50,15 +50,41 @@ const fetchDrivers = async () => {
 function renderDriversList() {
     const tbody = document.getElementById('driversTableBody');
     if (!tbody) return;
-    tbody.innerHTML = allDrivers.length === 0 ? `<tr><td colspan="3" style="text-align:center; padding:20px;">Aucun chauffeur.</td></tr>` : '';
-    allDrivers.forEach(d => {
-        tbody.innerHTML += `<tr>
-            <td><strong>${d.name}</strong></td>
-            <td><code style="background:#f1f5f9; padding:2px 6px; border-radius:4px;">${d.password}</code></td>
-            <td><button class="action-icon action-delete" onclick="deleteDriver('${d.id}')"><i class="fa-solid fa-trash-can"></i></button></td>
-        </tr>`;
-    });
+    
+    tbody.innerHTML = allDrivers.map(d => `
+        <tr>
+            <td>${d.name}</td>
+            <td>${d.password}</td>
+            <td>
+                <div class="action-btn-row" style="display:flex; gap:5px;">
+                    <button class="action-icon action-edit" onclick="openEditDriverModal('${d.id}', '${d.password}')" style="border:1px solid #ddd; padding:5px 10px; cursor:pointer; color:#f59e0b;">
+                        <i class="fa-solid fa-pen"></i>
+                    </button>
+                    <button class="action-icon action-delete" onclick="deleteDriver('${d.id}')" style="border:1px solid #ddd; padding:5px 10px; cursor:pointer; color:#ef4444;">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
 }
+
+// Ajoute ces fonctions à la fin de ton fichier admin.js
+function openEditDriverModal(id, pass) {
+    document.getElementById('editDriverId').value = id;
+    document.getElementById('editDriverPassword').value = pass;
+    document.getElementById('editDriverModal').style.display = 'flex';
+}
+
+document.getElementById('editDriverForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('editDriverId').value;
+    const pass = document.getElementById('editDriverPassword').value;
+    
+    await supabaseClient.from('drivers').update({password: pass}).eq('id', id);
+    document.getElementById('editDriverModal').style.display = 'none';
+    fetchDrivers(); // Recharge la liste
+});
 
 function populateDriverDropdowns() {
     const opts = '<option value="">- Choisir -</option>' + allDrivers.map(d => `<option value="${d.name}">${d.name}</option>`).join('');
