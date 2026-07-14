@@ -1,195 +1,113 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mon Planning - Michel VTC</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        :root {
-            --primary: #2563eb;
-            --bg: #0f172a;
-            --card-bg: #1e293b;
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --border: #334155;
-            --success: #10b981;
-            --warning: #f59e0b;
-        }
+const SUPABASE_URL = "https://vvdfxcnxzwcidxtzqfgx.supabase.co"; 
+const SUPABASE_KEY = "sb_publishable_sQLbXaT_zCNinhTaXd7Iiw_KsKIAeS2";
+let supabaseClient;
+try { if (typeof window !== "undefined" && window.supabase) supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch (err) {}
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
+let currentDriver = null;
+let allVehicles = [];
 
-        body {
-            background-color: var(--bg);
-            color: var(--text-primary);
-            padding: 15px;
-        }
+// --- GESTION DE LA CONNEXION ---
+const loginSection = document.getElementById('loginSection');
+const appSection = document.getElementById('appSection');
 
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-        }
+function checkSession() {
+    const saved = sessionStorage.getItem('logged_driver');
+    if (saved) {
+        currentDriver = saved;
+        document.getElementById('displayDriverName').innerText = currentDriver;
+        loginSection.style.display = 'none';
+        appSection.style.display = 'block';
+        initApp();
+    }
+}
+checkSession();
 
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid var(--border);
-        }
+document.getElementById('driverLoginForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if(!supabaseClient) return;
+    const name = document.getElementById('loginName').value.trim();
+    const pass = document.getElementById('loginPassword').value.trim();
 
-        h1 {
-            font-size: 20px;
-            color: var(--text-primary);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+    const { data, error } = await supabaseClient.from('drivers').select('*').eq('name', name).eq('password', pass);
+    
+    if (data && data.length > 0) {
+        sessionStorage.setItem('logged_driver', data[0].name);
+        checkSession();
+    } else {
+        alert("Identifiant ou mot de passe incorrect.");
+    }
+});
 
-        h1 i {
-            color: var(--primary);
-        }
+function logoutDriver() {
+    sessionStorage.removeItem('logged_driver');
+    location.reload();
+}
 
-        .driver-info-bar {
-            background: rgba(37, 99, 235, 0.1);
-            border: 1px solid rgba(37, 99, 235, 0.2);
-            border-radius: 8px;
-            padding: 10px 14px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+// --- LOGIQUE APPLICATION ---
+async function initApp() {
+    await fetchVehicles();
+    await fetchDriverCourses();
+    if (supabaseClient) {
+        supabaseClient.channel('driver-changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchDriverCourses())
+            .subscribe();
+    }
+}
 
-        /* Cartes de courses */
-        .course-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 18px;
-            margin-bottom: 15px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
-        }
+async function fetchVehicles() {
+    const { data } = await supabaseClient.from('vehicles').select('*');
+    allVehicles = data || [];
+}
 
-        .course-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            border-bottom: 1px dashed var(--border);
-            padding-bottom: 10px;
-        }
+async function fetchDriverCourses() {
+    const { data: courses } = await supabaseClient.from('orders').select('*').eq('driver_name', currentDriver).order('date', { ascending: true }).order('time', { ascending: true });
+    renderCourses(courses || []);
+}
 
-        .course-time {
-            font-size: 15px;
-            font-weight: bold;
-            color: var(--warning);
-        }
+function generateMissionText(course) {
+    const fDate = course.date ? new Date(course.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : '';
+    const v = allVehicles.find(v => v.id === course.vehicle_id);
+    return `VOTRE MISSION - SERVICE COMMANDÉ : ${course.service_type||'VAN'}\n-------------------------\nDate/Heure : ${fDate} à ${course.time}\nDépart : ${course.departure}\nDestination : ${course.destination}\n\nClient : ${course.client_name} - ${course.client_phone}\n\nTarif : ${course.price}€\n-------------------------`;
+}
 
-        .badge-status {
-            padding: 4px 8px;
-            border-radius: 9999px;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
+async function shareMission(courseId, courseData) {
+    const text = generateMissionText(JSON.parse(decodeURIComponent(courseData)));
+    if (navigator.share) { try { await navigator.share({ text: text }); return; } catch(e){} }
+    try { await navigator.clipboard.writeText(text); alert("Copié !"); } catch(e){}
+}
 
-        .status-attente { background-color: #7f1d1d; color: #fca5a5; }
-        .status-charge { background-color: #1e3a8a; color: #93c5fd; }
-        .status-depose { background-color: #064e3b; color: #6ee7b7; }
+function renderCourses(courses) {
+    const container = document.getElementById('coursesContainer');
+    container.innerHTML = courses.length === 0 ? '<div class="no-courses">Aucune course pour vous.</div>' : '';
+    
+    courses.forEach(course => {
+        let btn = '', badge = '';
+        if (course.status === 'attente') { badge = '<span class="badge-status status-attente">En attente</span>'; btn = `<button class="btn-action btn-pickup" onclick="updateCourseStatus('${course.id}', 'charge')"><i class="fa-solid fa-street-view"></i> Prise en Charge</button>`; } 
+        else if (course.status === 'charge') { badge = '<span class="badge-status status-charge">Client à bord</span>'; btn = `<button class="btn-action btn-dropoff" onclick="updateCourseStatus('${course.id}', 'depose')"><i class="fa-solid fa-flag-checkered"></i> Valider Dépose</button>`; } 
+        else { badge = '<span class="badge-status status-depose">Terminé</span>'; btn = `<div style="text-align:center; color:#10b981; font-weight:bold;"><i class="fa-solid fa-check"></i> Complétée</div>`; }
 
-        .address-block {
-            margin-bottom: 15px;
-            background: #111827;
-            padding: 10px;
-            border-radius: 6px;
-        }
+        const safeD = encodeURIComponent(JSON.stringify(course));
+        const dF = course.date ? new Date(course.date).toLocaleDateString('fr-FR', {day: 'numeric', month: 'short'}) : '';
+        const v = allVehicles.find(x => x.id === course.vehicle_id);
 
-        .address-item {
-            font-size: 13px;
-            line-height: 1.5;
-            margin-bottom: 8px;
-        }
-
-        .address-item:last-child {
-            margin-bottom: 0;
-        }
-
-        .client-info {
-            font-size: 14px;
-            margin-bottom: 15px;
-            color: var(--text-secondary);
-        }
-
-        .course-price {
-            font-size: 18px;
-            font-weight: bold;
-            color: var(--success);
-        }
-
-        .btn-action {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 8px;
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .btn-pickup { background-color: #2563eb; color: white; }
-        .btn-pickup:hover { background-color: #1d4ed8; }
-
-        .btn-dropoff { background-color: #10b981; color: white; }
-        .btn-dropoff:hover { background-color: #059669; }
-
-        .no-courses {
-            text-align: center;
-            color: var(--text-secondary);
-            padding: 40px 20px;
-            font-size: 14px;
-        }
-
-    </style>
-</head>
-<body>
-
-    <div class="container">
-        <header>
-            <h1><i class="fa-solid fa-calendar-days"></i> Mon Planning</h1>
-            <div id="connection-status" style="font-size: 12px; font-weight: bold;">
-                <span style="color:#94a3b8;">● Hors ligne</span>
+        container.innerHTML += `<div class="course-card">
+            <div class="course-header"><span class="course-time">${dF} à ${course.time}</span>${badge}</div>
+            <div class="address-block">
+                <div style="color:white; margin-bottom:6px;"><i class="fa-solid fa-circle" style="color:#2563eb; font-size:10px;"></i> ${course.departure}</div>
+                <div style="color:white;"><i class="fa-solid fa-location-dot" style="color:#ef4444; font-size:12px;"></i> ${course.destination}</div>
             </div>
-        </header>
+            <div class="client-info">
+                <div><i class="fa-solid fa-user"></i> ${course.client_name} - <a href="tel:${course.client_phone}" style="color:#38bdf8;">${course.client_phone}</a></div>
+                <div style="margin-top:8px; color:white;"><i class="fa-solid fa-car"></i> ${v ? v.model + ' (' + v.plate + ')' : 'Aucun véhicule'}</div>
+                ${course.info ? `<div style="margin-top:8px; font-style:italic;">Note: ${course.info}</div>` : ''}
+            </div>
+            <button class="btn-action" style="background:#475569; margin-bottom:12px;" onclick="shareMission('${course.id}', '${safeD}')"><i class="fa-solid fa-share-nodes"></i> Partager</button>
+            ${btn}
+        </div>`;
+    });
+}
 
-        <!-- BARRE D'INFORMATION DE L'UTILISATEUR CONNECTÉ -->
-        <div class="driver-info-bar">
-            <span>Chauffeur connecté : <strong>Michel</strong></span>
-            <span style="color: var(--success);"><i class="fa-solid fa-circle-user"></i> Actif</span>
-        </div>
-
-        <!-- ZONE D'AFFICHAGE DES COURSES -->
-        <div id="coursesContainer">
-            <div class="no-courses">Connexion en cours...</div>
-        </div>
-    </div>
-
-    <!-- SDK SUPABASE -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.js"></script>
-    <!-- LOGIQUE APPLICATIVE CHAUFFEUR -->
-    <script src="chauffeur.js"></script>
-
-</body>
-</html>
+async function updateCourseStatus(id, st) {
+    await supabaseClient.from('orders').update({ status: st }).eq('id', id);
+    fetchDriverCourses();
+}
