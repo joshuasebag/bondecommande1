@@ -14,7 +14,7 @@ function checkSession() {
     const saved = sessionStorage.getItem('logged_driver');
     if (saved) {
         currentDriver = saved;
-        document.getElementById('displayDriverName').innerText = currentDriver;
+        // On n'a plus l'élément displayDriverName dans le nouveau HTML style Shimon, donc on ignore
         loginSection.style.display = 'none';
         appSection.style.display = 'block';
         initApp();
@@ -81,28 +81,81 @@ function renderCourses(courses) {
     container.innerHTML = courses.length === 0 ? '<div class="no-courses">Aucune course pour vous.</div>' : '';
     
     courses.forEach(course => {
+        
+        // Formatage de la date en JJ/MM/AAAA (Comme sur la photo)
+        let dF = '';
+        if(course.date) {
+            const parts = course.date.split('-');
+            if(parts.length === 3) dF = `${parts[2]}/${parts[1]}/${parts[0]}`;
+        }
+
+        // Statut et Bouton Principal
         let btn = '', badge = '';
-        if (course.status === 'attente') { badge = '<span class="badge-status status-attente">En attente</span>'; btn = `<button class="btn-action btn-pickup" onclick="updateCourseStatus('${course.id}', 'charge')"><i class="fa-solid fa-street-view"></i> Prise en Charge</button>`; } 
-        else if (course.status === 'charge') { badge = '<span class="badge-status status-charge">Client à bord</span>'; btn = `<button class="btn-action btn-dropoff" onclick="updateCourseStatus('${course.id}', 'depose')"><i class="fa-solid fa-flag-checkered"></i> Valider Dépose</button>`; } 
-        else { badge = '<span class="badge-status status-depose">Terminé</span>'; btn = `<div style="text-align:center; color:#10b981; font-weight:bold;"><i class="fa-solid fa-check"></i> Complétée</div>`; }
+        if (course.status === 'attente') { 
+            badge = '<span class="shimon-badge">PLANIFIÉE</span>'; 
+            btn = `<button class="btn-main-action" onclick="updateCourseStatus('${course.id}', 'charge')"><i class="fa-solid fa-lock" style="color:#b38b59; margin-right:8px;"></i> Démarrer la course</button>`; 
+        } 
+        else if (course.status === 'charge') { 
+            badge = '<span class="shimon-badge" style="background:#e0f2fe; color:#0369a1;">À BORD</span>'; 
+            btn = `<button class="btn-main-action" onclick="updateCourseStatus('${course.id}', 'depose')"><i class="fa-solid fa-flag-checkered" style="color:#0369a1; margin-right:8px;"></i> Valider la Dépose</button>`; 
+        } 
+        else { 
+            badge = '<span class="shimon-badge" style="background:#e6f4ea; color:#15803d;">TERMINÉE</span>'; 
+            btn = `<div style="text-align:center; color:#10b981; font-weight:bold; margin-top:10px; padding:14px;"><i class="fa-solid fa-check"></i> Course complétée</div>`; 
+        }
 
-        const safeD = encodeURIComponent(JSON.stringify(course));
-        const dF = course.date ? new Date(course.date).toLocaleDateString('fr-FR', {day: 'numeric', month: 'short'}) : '';
+        const safeD = encodeURIComponent(JSON.stringify(course)).replace(/'/g, "%27");
         const v = allVehicles.find(x => x.id === course.vehicle_id);
+        
+        const paxInfo = course.passengers ? course.passengers : '1';
+        const vehicleText = v ? v.model + ' (' + v.plate + ')' : 'Non assigné';
 
-        container.innerHTML += `<div class="course-card">
-            <div class="course-header"><span class="course-time">${dF} à ${course.time}</span>${badge}</div>
-            <div class="address-block">
-                <div style="color:white; margin-bottom:6px;"><i class="fa-solid fa-circle" style="color:#2563eb; font-size:10px;"></i> ${course.departure}</div>
-                <div style="color:white;"><i class="fa-solid fa-location-dot" style="color:#ef4444; font-size:12px;"></i> ${course.destination}</div>
+        // Liens Waze et Agenda
+        const wazeUrl = `https://waze.com/ul?q=${encodeURIComponent(course.destination)}`;
+        const dateISO = course.date ? course.date.replace(/-/g, '') : '';
+        let timeISO = course.time ? course.time.replace(/:/g, '') : '000000';
+        if (timeISO.length === 4) timeISO += '00';
+        const gCalUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=Course+${encodeURIComponent(course.client_name)}&dates=${dateISO}T${timeISO}/${dateISO}T${timeISO}&details=Client:+${encodeURIComponent(course.client_name)}+-+Tel:+${encodeURIComponent(course.client_phone)}&location=${encodeURIComponent(course.destination)}`;
+
+        container.innerHTML += `
+        <div class="course-card">
+            <div class="shimon-header">
+                <div>
+                    <div class="shimon-time">${course.time}</div>
+                    <div class="shimon-date">${dF}</div>
+                </div>
+                <div>
+                    <div class="shimon-price">${course.price} €</div>
+                    ${badge}
+                </div>
             </div>
-            <div class="client-info">
-                <div><i class="fa-solid fa-user"></i> ${course.client_name} - <a href="tel:${course.client_phone}" style="color:#38bdf8;">${course.client_phone}</a></div>
-                <div style="margin-top:8px; color:white;"><i class="fa-solid fa-car"></i> ${v ? v.model + ' (' + v.plate + ')' : 'Aucun véhicule'}</div>
-                ${course.info ? `<div style="margin-top:8px; font-style:italic;">Note: ${course.info}</div>` : ''}
+
+            <div class="shimon-client">${course.client_name}</div>
+
+            <div class="shimon-addresses">
+                <div class="addr-block">${course.departure}</div>
+                <div class="addr-arrow">→</div>
+                <div class="addr-block">${course.destination}</div>
             </div>
-            <button class="btn-action" style="background:#475569; margin-bottom:12px;" onclick="shareMission('${course.id}', '${safeD}')"><i class="fa-solid fa-share-nodes"></i> Partager</button>
-            ${btn}
+
+            <div class="shimon-details">
+                <span><i class="fa-solid fa-user"></i> ${paxInfo} pers.</span>
+                <span><i class="fa-solid fa-suitcase"></i> ${vehicleText}</span>
+            </div>
+            
+            <div class="shimon-details">
+                <i class="fa-solid fa-phone"></i> 
+                <a href="tel:${course.client_phone}" style="color: inherit; text-decoration: none;">${course.client_phone}</a>
+            </div>
+
+            ${course.info ? `<div class="shimon-notes">📝 ${course.info}</div>` : ''}
+
+            <div class="shimon-buttons">
+                ${btn}
+                <a href="${gCalUrl}" target="_blank" class="btn-shimon"><i class="fa-regular fa-calendar"></i> Ajouter à mon agenda</a>
+                <button class="btn-shimon" onclick="shareMission('${course.id}', '${safeD}')"><i class="fa-regular fa-comment"></i> Messages (Partager)</button>
+                <a href="${wazeUrl}" target="_blank" class="btn-shimon"><i class="fa-regular fa-compass"></i> Ouvrir dans Waze</a>
+            </div>
         </div>`;
     });
 }
