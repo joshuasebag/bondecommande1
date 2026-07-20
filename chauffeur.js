@@ -1,7 +1,8 @@
 const SUPABASE_URL = "https://vvdfxcnxzwcidxtzqfgx.supabase.co"; 
 const SUPABASE_KEY = "sb_publishable_sQLbXaT_zCNinhTaXd7Iiw_KsKIAeS2";
-let supabaseClient;
-try { if (typeof window !== "undefined" && window.supabase) supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch (err) {}
+
+// Initialisation robuste (retrait du "try/catch" silencieux qui bloquait le bouton)
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentDriver = null;
 let allVehicles = [];
@@ -14,29 +15,47 @@ function checkSession() {
     const saved = sessionStorage.getItem('logged_driver');
     if (saved) {
         currentDriver = saved;
-        // On n'a plus l'élément displayDriverName dans le nouveau HTML style Shimon, donc on ignore
-        loginSection.style.display = 'none';
-        appSection.style.display = 'block';
+        if (loginSection) loginSection.style.display = 'none';
+        if (appSection) appSection.style.display = 'block';
         initApp();
     }
 }
 checkSession();
 
-document.getElementById('driverLoginForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if(!supabaseClient) return;
-    const name = document.getElementById('loginName').value.trim();
-    const pass = document.getElementById('loginPassword').value.trim();
+const driverLoginForm = document.getElementById('driverLoginForm');
+if (driverLoginForm) {
+    driverLoginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const nameInput = document.getElementById('loginName');
+        const passInput = document.getElementById('loginPassword');
+        
+        if (!nameInput || !passInput) return;
 
-    const { data, error } = await supabaseClient.from('drivers').select('*').eq('name', name).eq('password', pass);
-    
-    if (data && data.length > 0) {
-        sessionStorage.setItem('logged_driver', data[0].name);
-        checkSession();
-    } else {
-        alert("Identifiant ou mot de passe incorrect.");
-    }
-});
+        const name = nameInput.value.trim();
+        const pass = passInput.value.trim();
+
+        try {
+            const { data, error } = await supabaseClient
+                .from('drivers')
+                .select('*')
+                .eq('name', name)
+                .eq('password', pass);
+            
+            if (error) throw error;
+            
+            if (data && data.length > 0) {
+                sessionStorage.setItem('logged_driver', data[0].name);
+                checkSession();
+            } else {
+                alert("Identifiant ou mot de passe incorrect.");
+            }
+        } catch (err) {
+            console.error("Erreur Supabase lors de la connexion :", err);
+            alert("Erreur réseau ou base de données. Veuillez réessayer.");
+        }
+    });
+}
 
 function logoutDriver() {
     sessionStorage.removeItem('logged_driver');
@@ -78,6 +97,8 @@ async function shareMission(courseId, courseData) {
 
 function renderCourses(courses) {
     const container = document.getElementById('coursesContainer');
+    if (!container) return;
+    
     container.innerHTML = courses.length === 0 ? '<div class="no-courses">Aucune course pour vous.</div>' : '';
     
     courses.forEach(course => {
