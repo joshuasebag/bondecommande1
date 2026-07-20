@@ -273,7 +273,7 @@ const fetchAndDisplayOrders = async () => {
             
             const dF = o.date ? new Date(o.date).toLocaleDateString('fr-FR', {day: '2-digit', month: '2-digit'}) : '--/--';
             const v = allVehicles.find(x => x.id === o.vehicle_id);
-            const enc = encodeURIComponent(JSON.stringify(o));
+            const enc = encodeURIComponent(JSON.stringify(o)).replace(/'/g, "%27");
             
             tbody.innerHTML += `<tr>
                 <td><strong>${dF}</strong> à ${o.time}</td>
