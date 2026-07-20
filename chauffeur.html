@@ -26,13 +26,14 @@
         .login-card h2 { margin-bottom: 20px; color: var(--text-primary); display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: bold; }
         .login-card input { width: 100%; padding: 14px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--border); background: #f8fafc; color: var(--text-primary); font-size: 16px; outline: none; }
         .login-card input:focus { border-color: var(--primary); }
-        .login-card button { width: 100%; padding: 14px; background: var(--text-primary); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        .login-card button { width: 100%; padding: 14px; background: var(--text-primary); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: opacity 0.2s; }
+        .login-card button:active { opacity: 0.8; }
 
         /* Application Principale */
         #appSection { display: none; padding: 15px; max-width: 600px; margin: 0 auto; }
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 12px; }
         h1 { font-size: 24px; font-family: Georgia, serif; display: flex; align-items: center; gap: 10px; font-weight: normal; }
-        .driver-info-bar { font-size: 11px; font-weight: bold; color: var(--gold); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; display: flex; justify-content: space-between; }
+        .driver-info-bar { font-size: 11px; font-weight: bold; color: var(--gold); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
         
         /* Design Carte Shimon's */
         .course-card { background: var(--card-bg); border: 1px solid #e5e7eb; border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
@@ -83,7 +84,7 @@
     <div id="appSection">
         <div class="driver-info-bar">
             <span>ESPACE OPÉRATEUR</span>
-            <button onclick="logoutDriver()" style="background:white; border:1px solid #e2e8f0; color:#334155; border-radius:6px; padding:4px 10px; font-weight:bold; cursor:pointer; font-size:11px;">Déconnexion</button>
+            <button onclick="logoutDriver()" style="background:white; border:1px solid #e2e8f0; color:#334155; border-radius:6px; padding:6px 12px; font-weight:bold; cursor:pointer; font-size:11px;">Déconnexion</button>
         </div>
         <header>
             <h1>Shimon's</h1>
@@ -92,6 +93,7 @@
         <div id="coursesContainer"><div class="no-courses">Chargement...</div></div>
     </div>
 
+    <!-- Le script Supabase doit être chargé avant ton script JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.js"></script>
     <script src="chauffeur.js"></script>
 </body>
