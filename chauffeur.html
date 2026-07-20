@@ -6,41 +6,62 @@
     <title>Chauffeur VTC</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root { --primary: #2563eb; --bg: #0f172a; --card-bg: #1e293b; --text-primary: #f8fafc; --text-secondary: #94a3b8; --border: #334155; --success: #10b981; --warning: #f59e0b; }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        /* Thème clair Shimon's */
+        :root { 
+            --primary: #2563eb; 
+            --bg: #f9f8f4; 
+            --card-bg: #ffffff; 
+            --text-primary: #1e293b; 
+            --text-secondary: #64748b; 
+            --border: #e2e8f0; 
+            --success: #10b981; 
+            --gold: #b38b59;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body { background-color: var(--bg); color: var(--text-primary); }
 
         /* Écran de Connexion */
         #loginSection { height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
-        .login-card { background: var(--card-bg); padding: 30px 20px; border-radius: 16px; border: 1px solid var(--border); width: 100%; max-width: 400px; text-align: center; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5); }
-        .login-card h2 { margin-bottom: 20px; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .login-card input { width: 100%; padding: 14px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--border); background: #0f172a; color: white; font-size: 16px; outline: none; }
+        .login-card { background: var(--card-bg); padding: 30px 20px; border-radius: 16px; border: 1px solid var(--border); width: 100%; max-width: 400px; text-align: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .login-card h2 { margin-bottom: 20px; color: var(--text-primary); display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: bold; }
+        .login-card input { width: 100%; padding: 14px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--border); background: #f8fafc; color: var(--text-primary); font-size: 16px; outline: none; }
         .login-card input:focus { border-color: var(--primary); }
-        .login-card button { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        .login-card button { width: 100%; padding: 14px; background: var(--text-primary); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
 
         /* Application Principale */
         #appSection { display: none; padding: 15px; max-width: 600px; margin: 0 auto; }
-        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
-        h1 { font-size: 20px; display: flex; align-items: center; gap: 10px; }
-        .driver-info-bar { background: rgba(37, 99, 235, 0.1); border: 1px solid rgba(37, 99, 235, 0.2); border-radius: 8px; padding: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 12px; }
+        h1 { font-size: 24px; font-family: Georgia, serif; display: flex; align-items: center; gap: 10px; font-weight: normal; }
+        .driver-info-bar { font-size: 11px; font-weight: bold; color: var(--gold); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; display: flex; justify-content: space-between; }
         
-        .course-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 18px; margin-bottom: 15px; }
-        .course-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px dashed var(--border); padding-bottom: 10px; }
-        .course-time { font-size: 15px; font-weight: bold; color: var(--warning); }
-        .badge-status { padding: 4px 8px; border-radius: 9999px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
-        .status-attente { background-color: #7f1d1d; color: #fca5a5; } .status-charge { background-color: #1e3a8a; color: #93c5fd; } .status-depose { background-color: #064e3b; color: #6ee7b7; }
+        /* Design Carte Shimon's */
+        .course-card { background: var(--card-bg); border: 1px solid #e5e7eb; border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
         
-        .address-block { margin-bottom: 15px; background: #111827; padding: 10px; border-radius: 6px; font-size: 13px; line-height: 1.5; }
-        .client-info { font-size: 14px; margin-bottom: 15px; color: var(--text-secondary); }
-        .course-price { font-size: 18px; font-weight: bold; color: var(--success); }
+        .shimon-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
+        .shimon-time { font-size: 32px; font-family: Georgia, serif; color: var(--text-primary); line-height: 1; margin-bottom: 4px; }
+        .shimon-date { font-size: 14px; color: var(--text-secondary); }
+        .shimon-price { font-size: 22px; font-family: Georgia, serif; color: var(--gold); text-align: right; margin-bottom: 6px; }
+        .shimon-badge { background: #f1f5f9; color: #64748b; padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: bold; text-transform: uppercase; display: inline-block; }
         
-        .btn-action { display: flex; justify-content: center; align-items: center; gap: 8px; width: 100%; padding: 12px; border: none; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer; color: white; }
-        .btn-pickup { background-color: #2563eb; } .btn-dropoff { background-color: #10b981; }
+        .shimon-client { font-size: 18px; font-weight: bold; color: var(--text-primary); margin-bottom: 12px; }
+        
+        .shimon-addresses { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 14px; font-weight: 600; line-height: 1.4; }
+        .addr-block { flex: 1; border-bottom: 1px dashed #cbd5e1; padding-bottom: 2px; }
+        .addr-arrow { color: #cbd5e1; padding: 0 10px; font-size: 16px; }
+        
+        .shimon-details { font-size: 14px; color: var(--text-secondary); margin-bottom: 8px; display: flex; align-items: center; gap: 15px; }
+        .shimon-details i { color: #94a3b8; font-size: 14px; width: 16px; text-align: center; }
+        
+        .shimon-notes { font-size: 13px; color: var(--text-secondary); background: transparent; padding: 0; margin-top: 15px; margin-bottom: 20px; font-style: italic; line-height: 1.5; border-bottom: 1px dashed #cbd5e1; display: inline-block;}
+        
+        /* Boutons d'action */
+        .shimon-buttons { display: flex; flex-direction: column; gap: 8px; }
+        .btn-shimon { display: flex; justify-content: center; align-items: center; gap: 10px; width: 100%; padding: 14px; background-color: #fafafa; color: #334155; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 14px; font-weight: 600; text-decoration: none; cursor: pointer; }
+        .btn-shimon i { font-size: 16px; color: #94a3b8; }
+        
+        .btn-main-action { background-color: #f8f9fa; border: 1px solid #e2e8f0; color: #475569; border-radius: 10px; padding: 14px; font-weight: bold; font-size: 14px; width: 100%; cursor: pointer; text-align: center; }
+        
         .no-courses { text-align: center; color: var(--text-secondary); padding: 40px 20px; }
-
-        /* NOUVEAUX BOUTONS STYLE "SHIMON'S" */
-        .btn-shimon { display: flex; justify-content: center; align-items: center; gap: 8px; width: 100%; padding: 14px; margin-bottom: 10px; background-color: #f8fafc; color: #1e293b; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 15px; font-weight: 600; text-decoration: none; }
-        .btn-shimon i { font-size: 16px; color: #64748b; }
     </style>
 </head>
 <body>
@@ -48,26 +69,26 @@
     <!-- SECTION CONNEXION -->
     <div id="loginSection">
         <div class="login-card">
-            <h2><i class="fa-solid fa-steering-wheel"></i> Accès Chauffeur</h2>
+            <h2>Accès Chauffeur</h2>
             <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 14px;">Connectez-vous pour voir vos missions.</p>
             <form id="driverLoginForm">
                 <input type="text" id="loginName" placeholder="Identifiant (Nom)" required>
                 <input type="password" id="loginPassword" placeholder="Mot de passe" required>
-                <button type="submit"><i class="fa-solid fa-right-to-bracket"></i> Se connecter</button>
+                <button type="submit">Se connecter</button>
             </form>
         </div>
     </div>
 
     <!-- SECTION APPLICATION -->
     <div id="appSection">
-        <header>
-            <h1><i class="fa-solid fa-calendar-days"></i> Mon Planning</h1>
-            <button onclick="logoutDriver()" style="background:none; border:none; color:#ef4444; font-weight:bold; cursor:pointer;"><i class="fa-solid fa-power-off"></i> Quitter</button>
-        </header>
         <div class="driver-info-bar">
-            <span>Connecté : <strong id="displayDriverName">...</strong></span>
-            <span style="color: var(--success);"><i class="fa-solid fa-circle-user"></i> Actif</span>
+            <span>ESPACE OPÉRATEUR</span>
+            <button onclick="logoutDriver()" style="background:white; border:1px solid #e2e8f0; color:#334155; border-radius:6px; padding:4px 10px; font-weight:bold; cursor:pointer; font-size:11px;">Déconnexion</button>
         </div>
+        <header>
+            <h1>Shimon's</h1>
+        </header>
+        
         <div id="coursesContainer"><div class="no-courses">Chargement...</div></div>
     </div>
 
