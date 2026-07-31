@@ -9,7 +9,7 @@ let allVehicles = [];
 let allDrivers = [];
 let globalOrders = [];
 
-// --- AUTOCOMPLÉTION ---
+// --- AUTOCOMPLÉTION ADRESSES ---
 const setupAutocomplete = (inputId, suggestionsId) => {
     const input = document.getElementById(inputId); 
     const suggestionsContainer = document.getElementById(suggestionsId);
@@ -38,6 +38,57 @@ const setupAutocomplete = (inputId, suggestionsId) => {
 
 setupAutocomplete('departure', 'departure-suggestions'); setupAutocomplete('destination', 'destination-suggestions');
 setupAutocomplete('editDeparture', 'editDeparture-suggestions'); setupAutocomplete('editDestination', 'editDestination-suggestions');
+
+// --- AUTOCOMPLÉTION CLIENTS ENREGISTRÉS ---
+const setupClientAutocomplete = (inputId, suggestionsId) => {
+    const input = document.getElementById(inputId);
+    const suggestionsContainer = document.getElementById(suggestionsId);
+    if (!input || !suggestionsContainer) return;
+
+    input.addEventListener('input', (e) => {
+        const query = e.target.value.trim().toLowerCase();
+        if (query.length < 2) { suggestionsContainer.style.display = 'none'; return; }
+
+        const clientsMap = {};
+        globalOrders.forEach(o => {
+            const name = (o.client_name || '').trim();
+            const phone = (o.client_phone || '').trim();
+            if (name && !clientsMap[name.toLowerCase()]) {
+                clientsMap[name.toLowerCase()] = { name: name, phone: phone };
+            }
+        });
+
+        const matchedClients = Object.values(clientsMap).filter(c => 
+            c.name.toLowerCase().includes(query) || c.phone.includes(query)
+        );
+
+        suggestionsContainer.innerHTML = '';
+        if (matchedClients.length > 0) {
+            suggestionsContainer.style.display = 'block';
+            matchedClients.forEach(c => {
+                const div = document.createElement('div');
+                div.className = 'suggestion-item';
+                div.innerHTML = `<strong>${c.name}</strong> <small style="color:#64748b;">(${c.phone || 'Pas de tel'})</small>`;
+                div.addEventListener('click', () => {
+                    input.value = c.name;
+                    if (document.getElementById('clientPhone') && c.phone) {
+                        document.getElementById('clientPhone').value = c.phone;
+                    }
+                    suggestionsContainer.style.display = 'none';
+                });
+                suggestionsContainer.appendChild(div);
+            });
+        } else {
+            suggestionsContainer.style.display = 'none';
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (e.target !== input && e.target !== suggestionsContainer) suggestionsContainer.style.display = 'none';
+    });
+};
+
+setupClientAutocomplete('clientName', 'clientName-suggestions');
 
 // --- CHAUFFEURS ---
 const fetchDrivers = async () => {
@@ -193,15 +244,12 @@ function renderClientsList() {
 
     const clientsMap = {};
     
-    // On extrait tous les clients des commandes
     globalOrders.forEach(o => {
         const phone = (o.client_phone || '').trim();
         const name = (o.client_name || 'Inconnu').trim();
         
-        // S'il n'y a ni nom ni téléphone, on ignore
         if (!phone && name === 'Inconnu') return;
         
-        // On crée une clé unique (par exemple le numéro de téléphone pour regrouper la même personne)
         const key = phone || name.toLowerCase();
 
         if (!clientsMap[key]) {
@@ -210,14 +258,12 @@ function renderClientsList() {
 
         clientsMap[key].rides += 1;
         
-        // On ajoute le CA seulement si la course est terminée
         const st = (o.status || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
         if (st === 'depose' || st === 'termine') {
             clientsMap[key].revenue += (parseFloat(o.price) || 0);
         }
     });
 
-    // On transforme en tableau et on trie du meilleur client au moins bon (par CA)
     const clientsArray = Object.values(clientsMap).sort((a, b) => b.revenue - a.revenue);
 
     if (clientsArray.length === 0) {
@@ -225,7 +271,6 @@ function renderClientsList() {
         return;
     }
 
-    // Affichage dans le tableau
     tbody.innerHTML = clientsArray.map(c => `
         <tr>
             <td><strong><i class="fa-solid fa-user" style="color:var(--text-muted); margin-right:8px;"></i> ${c.name}</strong></td>
@@ -258,7 +303,7 @@ const fetchAndDisplayOrders = async () => {
     if (!error) {
         globalOrders = orders || []; 
         calculateDriverStats();
-        renderClientsList(); // Met à jour la liste des clients automatiquement
+        renderClientsList();
         
         const tbody = document.getElementById('ordersTableBody');
         if (!tbody) return;
