@@ -127,7 +127,6 @@
         <div class="nav-tabs">
             <div class="nav-tab active" onclick="switchView('orders-view', this)"><i class="fa-solid fa-list-check"></i> Commandes</div>
             <div class="nav-tab" onclick="switchView('dashboard-view', this)"><i class="fa-solid fa-chart-pie"></i> Équipe, CA & Flotte</div>
-            <!-- NOUVEL ONGLET CLIENTS -->
             <div class="nav-tab" onclick="switchView('clients-view', this)"><i class="fa-solid fa-address-book"></i> Clients</div>
         </div>
         <div class="nav-actions">
@@ -158,7 +157,11 @@
                         <div class="form-group"><label>Départ</label><input type="text" id="departure" autocomplete="off" required><div id="departure-suggestions" class="suggestions" style="display:none;"></div></div>
                         <div class="form-group"><label>Destination</label><input type="text" id="destination" autocomplete="off" required><div id="destination-suggestions" class="suggestions" style="display:none;"></div></div>
                         <div class="row">
-                            <div class="form-group"><label>Client</label><input type="text" id="clientName" required></div>
+                            <div class="form-group">
+                                <label>Client</label>
+                                <input type="text" id="clientName" autocomplete="off" required>
+                                <div id="clientName-suggestions" class="suggestions" style="display:none;"></div>
+                            </div>
                             <div class="form-group"><label>Téléphone</label><input type="tel" id="clientPhone" required></div>
                         </div>
                         <div class="row">
@@ -239,7 +242,7 @@
             </div>
         </div>
 
-        <!-- NOUVELLE VUE 3 : BASE CLIENTS -->
+        <!-- VUE 3 : BASE CLIENTS -->
         <div id="clients-view" class="view-section">
             <div class="card" style="padding: 0; overflow: hidden;">
                 <div class="card-title" style="margin: 24px 24px 0;">
