@@ -8,6 +8,7 @@ try {
 let allVehicles = [];
 let allDrivers = [];
 let globalOrders = [];
+let currentAdminOrderFilter = 'active'; // NOUVEAU : onglet actif ('active', 'history' ou 'all')
 
 // --- AUTOCOMPLÉTION ADRESSES ---
 const setupAutocomplete = (inputId, suggestionsId) => {
@@ -296,6 +297,62 @@ async function shareMissionFromAdmin(orderData) {
     try { await navigator.clipboard.writeText(text); alert("Mission copiée dans le presse-papier !"); } catch(e) { alert("Erreur lors de la copie."); }
 }
 
+// NOUVEAU : GESTION DES BOUTONS DU FILTRE COURSES ADMIN
+function switchAdminOrderFilter(filterType) {
+    currentAdminOrderFilter = filterType;
+    const btnActive = document.getElementById('filterActiveBtn');
+    const btnHistory = document.getElementById('filterHistoryBtn');
+    const btnAll = document.getElementById('filterAllBtn');
+    if (btnActive && btnHistory && btnAll) {
+        btnActive.classList.remove('active');
+        btnHistory.classList.remove('active');
+        btnAll.classList.remove('active');
+        if (filterType === 'active') btnActive.classList.add('active');
+        else if (filterType === 'history') btnHistory.classList.add('active');
+        else btnAll.classList.add('active');
+    }
+    renderOrdersTable();
+}
+
+function renderOrdersTable() {
+    const tbody = document.getElementById('ordersTableBody');
+    if (!tbody) return;
+
+    // Filtration selon l'onglet actif ('active', 'history', ou 'all')
+    const orders = globalOrders.filter(o => {
+        const st = (o.status||'').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+        const isFinished = (st === 'depose' || st === 'termine');
+        if (currentAdminOrderFilter === 'history') return isFinished;
+        if (currentAdminOrderFilter === 'active') return !isFinished;
+        return true; // pour 'all'
+    });
+
+    if (orders.length === 0) { 
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:40px;">Aucune course dans cet onglet.</td></tr>`; 
+        return; 
+    }
+
+    tbody.innerHTML = '';
+    orders.forEach(o => {
+        let bClass = 'badge-attente'; let sLabel = 'En attente';
+        const st = (o.status||'').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+        if (st === 'charge') { bClass = 'badge-charge'; sLabel = 'Pris en charge'; } 
+        else if (st === 'depose' || st === 'termine') { bClass = 'badge-depose'; sLabel = 'Déposé'; }
+        
+        const dF = o.date ? new Date(o.date).toLocaleDateString('fr-FR', {day: '2-digit', month: '2-digit'}) : '--/--';
+        const v = allVehicles.find(x => x.id === o.vehicle_id);
+        const enc = encodeURIComponent(JSON.stringify(o)).replace(/'/g, "%27");
+        
+        tbody.innerHTML += `<tr>
+            <td><strong>${dF}</strong> à ${o.time}</td>
+            <td><div style="font-size:12px; font-weight:500;"><i class="fa-solid fa-circle" style="color:var(--primary); font-size:8px;"></i> ${o.departure}</div><div style="font-size:12px; font-weight:500; margin-top:4px;"><i class="fa-solid fa-location-dot" style="color:var(--danger); font-size:9px;"></i> ${o.destination}</div><div style="font-size:11px; margin-top:6px; color:var(--text-muted);"><i class="fa-solid fa-user"></i> ${o.client_name} (${o.client_phone})</div></td>
+            <td><div style="font-weight:600;"><i class="fa-solid fa-user-tie" style="color:var(--primary);"></i> ${o.driver_name||'Non assigné'}</div><div style="font-size:11px; color:var(--text-muted); margin-top:3px;"><i class="fa-solid fa-car"></i> ${v?v.model:'<span style="color:red">Aucun</span>'}</div></td>
+            <td><span class="badge ${bClass}">${sLabel}</span></td>
+            <td><div class="action-btn-row"><button class="action-icon action-share" onclick="shareMissionFromAdmin('${enc}')" title="Partager"><i class="fa-solid fa-share-nodes"></i></button><button class="action-icon action-edit" onclick="openEditModal('${enc}')" title="Modifier"><i class="fa-solid fa-pen"></i></button><button class="action-icon action-delete" onclick="deleteOrder('${o.id}')" title="Supprimer"><i class="fa-solid fa-trash-can"></i></button></div></td>
+        </tr>`;
+    });
+}
+
 const fetchAndDisplayOrders = async () => {
     if (!supabaseClient) return;
     const { data: orders, error } = await supabaseClient.from('orders').select('*').order('date', { ascending: true }).order('time', { ascending: true });
@@ -304,30 +361,7 @@ const fetchAndDisplayOrders = async () => {
         globalOrders = orders || []; 
         calculateDriverStats();
         renderClientsList();
-        
-        const tbody = document.getElementById('ordersTableBody');
-        if (!tbody) return;
-        if (orders.length === 0) { tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:40px;">Aucune course enregistrée.</td></tr>`; return; }
-        
-        tbody.innerHTML = '';
-        orders.forEach(o => {
-            let bClass = 'badge-attente'; let sLabel = 'En attente';
-            const st = (o.status||'').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-            if (st === 'charge') { bClass = 'badge-charge'; sLabel = 'Pris en charge'; } 
-            else if (st === 'depose' || st === 'termine') { bClass = 'badge-depose'; sLabel = 'Déposé'; }
-            
-            const dF = o.date ? new Date(o.date).toLocaleDateString('fr-FR', {day: '2-digit', month: '2-digit'}) : '--/--';
-            const v = allVehicles.find(x => x.id === o.vehicle_id);
-            const enc = encodeURIComponent(JSON.stringify(o)).replace(/'/g, "%27");
-            
-            tbody.innerHTML += `<tr>
-                <td><strong>${dF}</strong> à ${o.time}</td>
-                <td><div style="font-size:12px; font-weight:500;"><i class="fa-solid fa-circle" style="color:var(--primary); font-size:8px;"></i> ${o.departure}</div><div style="font-size:12px; font-weight:500; margin-top:4px;"><i class="fa-solid fa-location-dot" style="color:var(--danger); font-size:9px;"></i> ${o.destination}</div><div style="font-size:11px; margin-top:6px; color:var(--text-muted);"><i class="fa-solid fa-user"></i> ${o.client_name} (${o.client_phone})</div></td>
-                <td><div style="font-weight:600;"><i class="fa-solid fa-user-tie" style="color:var(--primary);"></i> ${o.driver_name||'Non assigné'}</div><div style="font-size:11px; color:var(--text-muted); margin-top:3px;"><i class="fa-solid fa-car"></i> ${v?v.model:'<span style="color:red">Aucun</span>'}</div></td>
-                <td><span class="badge ${bClass}">${sLabel}</span></td>
-                <td><div class="action-btn-row"><button class="action-icon action-share" onclick="shareMissionFromAdmin('${enc}')" title="Partager"><i class="fa-solid fa-share-nodes"></i></button><button class="action-icon action-edit" onclick="openEditModal('${enc}')" title="Modifier"><i class="fa-solid fa-pen"></i></button><button class="action-icon action-delete" onclick="deleteOrder('${o.id}')" title="Supprimer"><i class="fa-solid fa-trash-can"></i></button></div></td>
-            </tr>`;
-        });
+        renderOrdersTable(); // Utilise le tableau filtré
     }
 };
 
