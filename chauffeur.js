@@ -1,11 +1,13 @@
 const SUPABASE_URL = "https://vvdfxcnxzwcidxtzqfgx.supabase.co"; 
 const SUPABASE_KEY = "sb_publishable_sQLbXaT_zCNinhTaXd7Iiw_KsKIAeS2";
 
-// Initialisation robuste (retrait du "try/catch" silencieux qui bloquait le bouton)
+// Initialisation robuste
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentDriver = null;
 let allVehicles = [];
+let allDriverCourses = []; // NOUVEAU : stockage en mémoire pour changer d'onglet instantanément
+let currentTab = 'active'; // NOUVEAU : onglet actif par défaut ('active' ou 'history')
 
 // --- GESTION DE LA CONNEXION ---
 const loginSection = document.getElementById('loginSection');
@@ -80,8 +82,27 @@ async function fetchVehicles() {
 
 async function fetchDriverCourses() {
     const { data: courses } = await supabaseClient.from('orders').select('*').eq('driver_name', currentDriver).order('date', { ascending: true }).order('time', { ascending: true });
-    renderCourses(courses || []);
+    allDriverCourses = courses || [];
+    renderCourses(); // On affiche avec le filtre de l'onglet courant
 }
+
+// --- NOUVEAU : CHANGEMENT D'ONGLET ---
+function switchTab(tab) {
+    currentTab = tab;
+    const btnActive = document.getElementById('tabActiveBtn');
+    const btnHistory = document.getElementById('tabHistoryBtn');
+    if (btnActive && btnHistory) {
+        if (tab === 'active') {
+            btnActive.classList.add('active');
+            btnHistory.classList.remove('active');
+        } else {
+            btnHistory.classList.add('active');
+            btnActive.classList.remove('active');
+        }
+    }
+    renderCourses();
+}
+// ------------------------------------
 
 function generateMissionText(course) {
     const fDate = course.date ? new Date(course.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : '';
@@ -95,11 +116,21 @@ async function shareMission(courseId, courseData) {
     try { await navigator.clipboard.writeText(text); alert("Copié !"); } catch(e){}
 }
 
-function renderCourses(courses) {
+function renderCourses() {
     const container = document.getElementById('coursesContainer');
     if (!container) return;
+
+    // NOUVEAU : FILTRAGE DES COURSES SELON L'ONGLET SÉLECTIONNÉ
+    const courses = allDriverCourses.filter(c => {
+        const isFinished = c.status === 'depose' || c.status === 'termine';
+        if (currentTab === 'history') {
+            return isFinished; // Onglet "Anciennes courses" : uniquement les terminées
+        } else {
+            return !isFinished; // Onglet "À venir" : uniquement en attente ou en charge
+        }
+    });
     
-    container.innerHTML = courses.length === 0 ? '<div class="no-courses">Aucune course pour vous.</div>' : '';
+    container.innerHTML = courses.length === 0 ? '<div class="no-courses">Aucune course dans cet onglet.</div>' : '';
     
     courses.forEach(course => {
         
