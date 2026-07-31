@@ -98,6 +98,12 @@
         .modal-content { background-color: var(--card-bg); border-radius: var(--radius); width: 100%; max-width: 650px; padding: 30px; position: relative; max-height: 90vh; overflow-y: auto; }
         .modal-close { position: absolute; top: 20px; right: 20px; font-size: 24px; cursor: pointer; color: var(--text-muted); }
 
+        /* NOUVEAU : STYLE FILTRES ONGLETS ADMIN */
+        .admin-filter-bar { display: flex; gap: 8px; margin: 16px 24px 0; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+        .admin-filter-btn { padding: 8px 14px; border: 1px solid var(--border); background: #f8fafc; border-radius: 6px; font-size: 13px; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: all 0.2s; }
+        .admin-filter-btn:hover { background: #f1f5f9; }
+        .admin-filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
         /* OPTIMISATIONS MOBILES */
         @media (max-width: 900px) {
             .top-nav { flex-wrap: wrap; height: auto; padding: 12px 16px; }
@@ -179,6 +185,14 @@
                 <!-- Colonne Droite : Le tableau -->
                 <div class="card" style="padding: 0; overflow: hidden;">
                     <div class="card-title" style="margin: 24px 24px 0;"><i class="fa-solid fa-list" style="color: var(--text-main);"></i> Suivi des Missions</div>
+                    
+                    <!-- NOUVEAU : BOUTONS DE FILTRE ONGLETS ADMIN -->
+                    <div class="admin-filter-bar">
+                        <button id="filterActiveBtn" class="admin-filter-btn active" onclick="switchAdminOrderFilter('active')"><i class="fa-solid fa-list"></i> À venir / En cours</button>
+                        <button id="filterHistoryBtn" class="admin-filter-btn" onclick="switchAdminOrderFilter('history')"><i class="fa-solid fa-clock-rotate-left"></i> Anciennes courses</button>
+                        <button id="filterAllBtn" class="admin-filter-btn" onclick="switchAdminOrderFilter('all')"><i class="fa-solid fa-layer-group"></i> Toutes</button>
+                    </div>
+
                     <div class="table-container" style="border: none; border-radius: 0; margin-top: 16px;">
                         <table>
                             <thead><tr><th>Date/Heure</th><th>Trajet & Client</th><th>Chauffeur & Véhicule</th><th>Statut</th><th>Act.</th></tr></thead>
