@@ -8,7 +8,7 @@ try {
 let allVehicles = [];
 let allDrivers = [];
 let globalOrders = [];
-let currentAdminOrderFilter = 'active'; // NOUVEAU : onglet actif ('active', 'history' ou 'all')
+let currentAdminOrderFilter = 'active'; // 'active', 'history' ou 'all'
 
 // --- AUTOCOMPLÉTION ADRESSES ---
 const setupAutocomplete = (inputId, suggestionsId) => {
@@ -291,13 +291,12 @@ function generateMissionText(order) {
     return `VOTRE MISSION - SERVICE COMMANDÉ : ${order.service_type||'VAN'}\n-------------------------\nDate et heure : ${fDate} à ${order.time||'--:--'}\nDépart : ${order.departure||''}\nDestination : ${order.destination||''}\n\nClient : ${order.client_name||''} - ${order.client_phone||''} (${order.passengers||1} pax)\nChauffeur : ${order.driver_name||''}\n${v?v.phone:''}\n${v?v.model:''}\n${v?v.plate:''}\n\nTarif : ${order.price||'0'}€ ttc PP\nInfos : ${order.info||'Aucune'}\nCommandé le ${creationDate} à ${creationTime}\n-------------------------\nFernand Michel Sebag`;
 }
 
-async function shareMissionFromAdmin(orderData) {
-    const text = generateMissionText(JSON.parse(decodeURIComponent(orderData)));
+async function shareMissionFromAdmin(order) {
+    const text = generateMissionText(order);
     if (navigator.share) { try { await navigator.share({ text: text }); return; } catch(e){} }
     try { await navigator.clipboard.writeText(text); alert("Mission copiée dans le presse-papier !"); } catch(e) { alert("Erreur lors de la copie."); }
 }
 
-// NOUVEAU : GESTION DES BOUTONS DU FILTRE COURSES ADMIN
 function switchAdminOrderFilter(filterType) {
     currentAdminOrderFilter = filterType;
     const btnActive = document.getElementById('filterActiveBtn');
@@ -318,13 +317,13 @@ function renderOrdersTable() {
     const tbody = document.getElementById('ordersTableBody');
     if (!tbody) return;
 
-    // Filtration selon l'onglet actif ('active', 'history', ou 'all')
+    // FILTRAGE ROBUSTE : On vérifie "depose", "déposé", "termine", "terminé" sans souci d'accent ni majuscule
     const orders = globalOrders.filter(o => {
-        const st = (o.status||'').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-        const isFinished = (st === 'depose' || st === 'termine');
+        const st = (o.status || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+        const isFinished = (st === 'depose' || st === 'deposee' || st === 'termine' || st === 'terminee');
         if (currentAdminOrderFilter === 'history') return isFinished;
         if (currentAdminOrderFilter === 'active') return !isFinished;
-        return true; // pour 'all'
+        return true; 
     });
 
     if (orders.length === 0) { 
@@ -335,21 +334,34 @@ function renderOrdersTable() {
     tbody.innerHTML = '';
     orders.forEach(o => {
         let bClass = 'badge-attente'; let sLabel = 'En attente';
-        const st = (o.status||'').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+        const st = (o.status || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
         if (st === 'charge') { bClass = 'badge-charge'; sLabel = 'Pris en charge'; } 
-        else if (st === 'depose' || st === 'termine') { bClass = 'badge-depose'; sLabel = 'Déposé'; }
+        else if (st === 'depose' || st === 'deposee' || st === 'termine' || st === 'terminee') { bClass = 'badge-depose'; sLabel = 'Déposé'; }
         
         const dF = o.date ? new Date(o.date).toLocaleDateString('fr-FR', {day: '2-digit', month: '2-digit'}) : '--/--';
         const v = allVehicles.find(x => x.id === o.vehicle_id);
-        const enc = encodeURIComponent(JSON.stringify(o)).replace(/'/g, "%27");
         
-        tbody.innerHTML += `<tr>
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
             <td><strong>${dF}</strong> à ${o.time}</td>
             <td><div style="font-size:12px; font-weight:500;"><i class="fa-solid fa-circle" style="color:var(--primary); font-size:8px;"></i> ${o.departure}</div><div style="font-size:12px; font-weight:500; margin-top:4px;"><i class="fa-solid fa-location-dot" style="color:var(--danger); font-size:9px;"></i> ${o.destination}</div><div style="font-size:11px; margin-top:6px; color:var(--text-muted);"><i class="fa-solid fa-user"></i> ${o.client_name} (${o.client_phone})</div></td>
             <td><div style="font-weight:600;"><i class="fa-solid fa-user-tie" style="color:var(--primary);"></i> ${o.driver_name||'Non assigné'}</div><div style="font-size:11px; color:var(--text-muted); margin-top:3px;"><i class="fa-solid fa-car"></i> ${v?v.model:'<span style="color:red">Aucun</span>'}</div></td>
             <td><span class="badge ${bClass}">${sLabel}</span></td>
-            <td><div class="action-btn-row"><button class="action-icon action-share" onclick="shareMissionFromAdmin('${enc}')" title="Partager"><i class="fa-solid fa-share-nodes"></i></button><button class="action-icon action-edit" onclick="openEditModal('${enc}')" title="Modifier"><i class="fa-solid fa-pen"></i></button><button class="action-icon action-delete" onclick="deleteOrder('${o.id}')" title="Supprimer"><i class="fa-solid fa-trash-can"></i></button></div></td>
-        </tr>`;
+            <td>
+                <div class="action-btn-row">
+                    <button class="action-icon action-share" title="Partager"><i class="fa-solid fa-share-nodes"></i></button>
+                    <button class="action-icon action-edit" title="Modifier"><i class="fa-solid fa-pen"></i></button>
+                    <button class="action-icon action-delete" title="Supprimer"><i class="fa-solid fa-trash-can"></i></button>
+                </div>
+            </td>
+        `;
+
+        // ATTACHE ROBUSTE DES ÉVÉNEMENTS SUR LES BOUTONS (Évite le bug des apostrophes dans le HTML)
+        tr.querySelector('.action-share').addEventListener('click', () => shareMissionFromAdmin(o));
+        tr.querySelector('.action-edit').addEventListener('click', () => openEditModal(o));
+        tr.querySelector('.action-delete').addEventListener('click', () => deleteOrder(o.id));
+
+        tbody.appendChild(tr);
     });
 }
 
@@ -361,16 +373,24 @@ const fetchAndDisplayOrders = async () => {
         globalOrders = orders || []; 
         calculateDriverStats();
         renderClientsList();
-        renderOrdersTable(); // Utilise le tableau filtré
+        renderOrdersTable();
     }
 };
 
 async function deleteOrder(id) { if (confirm("Supprimer cette course définitivement ?")) { await supabaseClient.from('orders').delete().eq('id', id); fetchAndDisplayOrders(); } }
 
 const editModal = document.getElementById('editModal');
-function openEditModal(d) {
-    const o = JSON.parse(decodeURIComponent(d));
-    document.getElementById('editOrderId').value = o.id; document.getElementById('editServiceType').value = o.service_type||'Transfert'; document.getElementById('editPrice').value = o.price||0; document.getElementById('editDate').value = o.date||''; document.getElementById('editTime').value = o.time||''; document.getElementById('editDeparture').value = o.departure||''; document.getElementById('editDestination').value = o.destination||''; document.getElementById('editAssignedDriver').value = o.driver_name||''; document.getElementById('editAssignedVehicle').value = o.vehicle_id||''; document.getElementById('editStatus').value = o.status||'attente';
+function openEditModal(o) {
+    document.getElementById('editOrderId').value = o.id; 
+    document.getElementById('editServiceType').value = o.service_type || 'Transfert'; 
+    document.getElementById('editPrice').value = o.price || 0; 
+    document.getElementById('editDate').value = o.date || ''; 
+    document.getElementById('editTime').value = o.time || ''; 
+    document.getElementById('editDeparture').value = o.departure || ''; 
+    document.getElementById('editDestination').value = o.destination || ''; 
+    document.getElementById('editAssignedDriver').value = o.driver_name || ''; 
+    document.getElementById('editAssignedVehicle').value = o.vehicle_id || ''; 
+    document.getElementById('editStatus').value = o.status || 'attente';
     editModal.style.display = 'flex';
 }
 function closeEditModal() { editModal.style.display = 'none'; }
