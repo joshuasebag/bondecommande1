@@ -238,12 +238,13 @@ function calculateDriverStats() {
     });
 }
 
-// --- BASE CLIENTS AUTOMATIQUE AVEC RECHERCHE ET HISTORIQUE ---
+// --- BASE CLIENTS AUTOMATIQUE ---
 function renderClientsList() {
     const tbody = document.getElementById('clientsTableBody');
     if (!tbody) return;
 
-    const searchVal = (document.getElementById('searchClientInput')?.value || '').toLowerCase();
+    const searchInput = document.getElementById('searchClientInput');
+    const searchVal = searchInput ? searchInput.value.toLowerCase() : '';
 
     const clientsMap = {};
     
@@ -269,7 +270,6 @@ function renderClientsList() {
 
     let clientsArray = Object.values(clientsMap).sort((a, b) => b.revenue - a.revenue);
 
-    // Filtrer si une recherche est en cours
     if (searchVal) {
         clientsArray = clientsArray.filter(c => c.name.toLowerCase().includes(searchVal) || (c.phone && c.phone.includes(searchVal)));
     }
@@ -279,36 +279,30 @@ function renderClientsList() {
         return;
     }
 
-    tbody.innerHTML = '';
-    clientsArray.forEach(c => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
+    // On utilise map().join('') pour respecter exactement ta base et ne créer aucune erreur
+    tbody.innerHTML = clientsArray.map(c => {
+        const encName = encodeURIComponent(c.name).replace(/'/g, "%27");
+        return `
+        <tr>
             <td>
-                <strong style="cursor:pointer; color:var(--primary);" class="client-name-link" title="Voir l'historique des courses">
+                <strong style="cursor:pointer; color:var(--primary);" onclick="openClientHistory('${encName}')" title="Voir l'historique des courses">
                     <i class="fa-solid fa-user" style="color:var(--text-muted); margin-right:8px;"></i> <span style="text-decoration:underline;">${c.name}</span>
                 </strong>
             </td>
             <td>${c.phone ? `<a href="tel:${c.phone}" style="color:var(--info); font-weight:500; text-decoration:none;"><i class="fa-solid fa-phone" style="font-size:12px; margin-right:5px;"></i>${c.phone}</a>` : '<span style="color:#ccc;">Non renseigné</span>'}</td>
             <td><span class="badge" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd;">${c.rides} course(s)</span></td>
             <td><strong style="color:var(--success);">${c.revenue.toFixed(2)} €</strong></td>
-        `;
-        
-        // Clic pour ouvrir l'historique
-        tr.querySelector('.client-name-link').addEventListener('click', () => openClientHistory(c.name));
-        
-        tbody.appendChild(tr);
-    });
+        </tr>`;
+    }).join('');
 }
 
-const clientHistoryModal = document.getElementById('clientHistoryModal');
-function openClientHistory(clientName) {
+function openClientHistory(encName) {
+    const clientName = decodeURIComponent(encName);
     document.getElementById('historyClientName').textContent = clientName;
     const tbody = document.getElementById('clientHistoryTableBody');
     
-    // On trouve les courses du client
     const clientOrders = globalOrders.filter(o => (o.client_name || '').toLowerCase() === clientName.toLowerCase());
     
-    // Tri décroissant pour avoir la dernière course en haut
     clientOrders.sort((a, b) => {
         return new Date((b.date||'2000-01-01')+'T'+(b.time||'00:00')) - new Date((a.date||'2000-01-01')+'T'+(a.time||'00:00'));
     });
@@ -334,10 +328,10 @@ function openClientHistory(clientName) {
             </tr>`;
         }).join('');
     }
-    clientHistoryModal.style.display = 'flex';
+    
+    const modal = document.getElementById('clientHistoryModal');
+    if (modal) modal.style.display = 'flex';
 }
-function closeClientHistoryModal() { clientHistoryModal.style.display = 'none'; }
-
 
 // --- COURSES ---
 function generateMissionText(order) {
@@ -348,8 +342,8 @@ function generateMissionText(order) {
     return `VOTRE MISSION - SERVICE COMMANDÉ : ${order.service_type||'VAN'}\n-------------------------\nDate et heure : ${fDate} à ${order.time||'--:--'}\nDépart : ${order.departure||''}\nDestination : ${order.destination||''}\n\nClient : ${order.client_name||''} - ${order.client_phone||''} (${order.passengers||1} pax)\nChauffeur : ${order.driver_name||''}\n${v?v.phone:''}\n${v?v.model:''}\n${v?v.plate:''}\n\nTarif : ${order.price||'0'}€ ttc PP\nInfos : ${order.info||'Aucune'}\nCommandé le ${creationDate} à ${creationTime}\n-------------------------\nFernand Michel Sebag`;
 }
 
-async function shareMissionFromAdmin(order) {
-    const text = generateMissionText(order);
+async function shareMissionFromAdmin(encOrder) {
+    const text = generateMissionText(JSON.parse(decodeURIComponent(encOrder)));
     if (navigator.share) { try { await navigator.share({ text: text }); return; } catch(e){} }
     try { await navigator.clipboard.writeText(text); alert("Mission copiée dans le presse-papier !"); } catch(e) { alert("Erreur lors de la copie."); }
 }
@@ -374,9 +368,9 @@ function renderOrdersTable() {
     const tbody = document.getElementById('ordersTableBody');
     if (!tbody) return;
 
-    const searchVal = (document.getElementById('searchOrderInput')?.value || '').toLowerCase();
+    const searchInput = document.getElementById('searchOrderInput');
+    const searchVal = searchInput ? searchInput.value.toLowerCase() : '';
 
-    // FILTRAGE ROBUSTE ET RECHERCHE
     const orders = globalOrders.filter(o => {
         const st = (o.status || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
         const isFinished = (st === 'depose' || st === 'deposee' || st === 'termine' || st === 'terminee');
@@ -399,8 +393,8 @@ function renderOrdersTable() {
         return; 
     }
 
-    tbody.innerHTML = '';
-    orders.forEach(o => {
+    // On utilise map().join('') pour respecter exactement ta base et ne créer aucune erreur
+    tbody.innerHTML = orders.map(o => {
         let bClass = 'badge-attente'; let sLabel = 'En attente';
         const st = (o.status || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
         if (st === 'charge') { bClass = 'badge-charge'; sLabel = 'Pris en charge'; } 
@@ -408,28 +402,23 @@ function renderOrdersTable() {
         
         const dF = o.date ? new Date(o.date).toLocaleDateString('fr-FR', {day: '2-digit', month: '2-digit'}) : '--/--';
         const v = allVehicles.find(x => x.id === o.vehicle_id);
+        const enc = encodeURIComponent(JSON.stringify(o)).replace(/'/g, "%27");
         
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
+        return `
+        <tr>
             <td><strong>${dF}</strong> à ${o.time}</td>
             <td><div style="font-size:12px; font-weight:500;"><i class="fa-solid fa-circle" style="color:var(--primary); font-size:8px;"></i> ${o.departure}</div><div style="font-size:12px; font-weight:500; margin-top:4px;"><i class="fa-solid fa-location-dot" style="color:var(--danger); font-size:9px;"></i> ${o.destination}</div><div style="font-size:11px; margin-top:6px; color:var(--text-muted);"><i class="fa-solid fa-user"></i> ${o.client_name} (${o.client_phone})</div></td>
             <td><div style="font-weight:600;"><i class="fa-solid fa-user-tie" style="color:var(--primary);"></i> ${o.driver_name||'Non assigné'}</div><div style="font-size:11px; color:var(--text-muted); margin-top:3px;"><i class="fa-solid fa-car"></i> ${v?v.model:'<span style="color:red">Aucun</span>'}</div></td>
             <td><span class="badge ${bClass}">${sLabel}</span></td>
             <td>
                 <div class="action-btn-row">
-                    <button class="action-icon action-share" title="Partager"><i class="fa-solid fa-share-nodes"></i></button>
-                    <button class="action-icon action-edit" title="Modifier"><i class="fa-solid fa-pen"></i></button>
-                    <button class="action-icon action-delete" title="Supprimer"><i class="fa-solid fa-trash-can"></i></button>
+                    <button class="action-icon action-share" onclick="shareMissionFromAdmin('${enc}')" title="Partager"><i class="fa-solid fa-share-nodes"></i></button>
+                    <button class="action-icon action-edit" onclick="openEditModal('${enc}')" title="Modifier"><i class="fa-solid fa-pen"></i></button>
+                    <button class="action-icon action-delete" onclick="deleteOrder('${o.id}')" title="Supprimer"><i class="fa-solid fa-trash-can"></i></button>
                 </div>
             </td>
-        `;
-
-        tr.querySelector('.action-share').addEventListener('click', () => shareMissionFromAdmin(o));
-        tr.querySelector('.action-edit').addEventListener('click', () => openEditModal(o));
-        tr.querySelector('.action-delete').addEventListener('click', () => deleteOrder(o.id));
-
-        tbody.appendChild(tr);
-    });
+        </tr>`;
+    }).join('');
 }
 
 const fetchAndDisplayOrders = async () => {
@@ -447,7 +436,8 @@ const fetchAndDisplayOrders = async () => {
 async function deleteOrder(id) { if (confirm("Supprimer cette course définitivement ?")) { await supabaseClient.from('orders').delete().eq('id', id); fetchAndDisplayOrders(); } }
 
 const editModal = document.getElementById('editModal');
-function openEditModal(o) {
+function openEditModal(d) {
+    const o = JSON.parse(decodeURIComponent(d));
     document.getElementById('editOrderId').value = o.id; 
     document.getElementById('editServiceType').value = o.service_type || 'Transfert'; 
     document.getElementById('editPrice').value = o.price || 0; 
@@ -462,11 +452,16 @@ function openEditModal(o) {
 }
 function closeEditModal() { editModal.style.display = 'none'; }
 
+// Fermeture globale des modales
 window.onclick = e => { 
-    if (e.target == editModal) closeEditModal(); 
-    if (e.target == editDriverModal) closeEditDriverModal(); 
-    if (e.target == planningModal) closePlanningModal();
-    if (e.target == clientHistoryModal) closeClientHistoryModal(); // Ajout pour fermer le nouveau modal d'historique
+    const em = document.getElementById('editModal');
+    const edm = document.getElementById('editDriverModal');
+    const pm = document.getElementById('planningModal');
+    const chm = document.getElementById('clientHistoryModal');
+    if (e.target == em) closeEditModal(); 
+    if (e.target == edm) closeEditDriverModal(); 
+    if (e.target == pm) closePlanningModal();
+    if (chm && e.target == chm) chm.style.display = 'none';
 }
 
 document.getElementById('editOrderForm')?.addEventListener('submit', async e => {
@@ -483,7 +478,16 @@ document.getElementById('orderForm')?.addEventListener('submit', async e => {
 });
 
 const init = async () => {
-    await fetchDrivers(); await fetchVehicles(); await fetchAndDisplayOrders();
+    // On attache les événements de recherche ici en JavaScript pur
+    const sOrder = document.getElementById('searchOrderInput');
+    if(sOrder) sOrder.addEventListener('input', renderOrdersTable);
+    
+    const sClient = document.getElementById('searchClientInput');
+    if(sClient) sClient.addEventListener('input', renderClientsList);
+
+    await fetchDrivers(); 
+    await fetchVehicles(); 
+    await fetchAndDisplayOrders();
     if (supabaseClient) {
         supabaseClient.channel('db-changes')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchAndDisplayOrders())
