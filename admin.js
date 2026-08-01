@@ -238,10 +238,12 @@ function calculateDriverStats() {
     });
 }
 
-// --- BASE CLIENTS AUTOMATIQUE ---
+// --- BASE CLIENTS AUTOMATIQUE AVEC RECHERCHE ET HISTORIQUE ---
 function renderClientsList() {
     const tbody = document.getElementById('clientsTableBody');
     if (!tbody) return;
+
+    const searchVal = (document.getElementById('searchClientInput')?.value || '').toLowerCase();
 
     const clientsMap = {};
     
@@ -260,27 +262,82 @@ function renderClientsList() {
         clientsMap[key].rides += 1;
         
         const st = (o.status || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-        if (st === 'depose' || st === 'termine') {
+        if (st === 'depose' || st === 'deposee' || st === 'termine' || st === 'terminee') {
             clientsMap[key].revenue += (parseFloat(o.price) || 0);
         }
     });
 
-    const clientsArray = Object.values(clientsMap).sort((a, b) => b.revenue - a.revenue);
+    let clientsArray = Object.values(clientsMap).sort((a, b) => b.revenue - a.revenue);
+
+    // Filtrer si une recherche est en cours
+    if (searchVal) {
+        clientsArray = clientsArray.filter(c => c.name.toLowerCase().includes(searchVal) || (c.phone && c.phone.includes(searchVal)));
+    }
 
     if (clientsArray.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 40px;">Aucun client dans l'historique.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 40px;">Aucun client trouvé.</td></tr>`;
         return;
     }
 
-    tbody.innerHTML = clientsArray.map(c => `
-        <tr>
-            <td><strong><i class="fa-solid fa-user" style="color:var(--text-muted); margin-right:8px;"></i> ${c.name}</strong></td>
+    tbody.innerHTML = '';
+    clientsArray.forEach(c => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>
+                <strong style="cursor:pointer; color:var(--primary);" class="client-name-link" title="Voir l'historique des courses">
+                    <i class="fa-solid fa-user" style="color:var(--text-muted); margin-right:8px;"></i> <span style="text-decoration:underline;">${c.name}</span>
+                </strong>
+            </td>
             <td>${c.phone ? `<a href="tel:${c.phone}" style="color:var(--info); font-weight:500; text-decoration:none;"><i class="fa-solid fa-phone" style="font-size:12px; margin-right:5px;"></i>${c.phone}</a>` : '<span style="color:#ccc;">Non renseigné</span>'}</td>
             <td><span class="badge" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd;">${c.rides} course(s)</span></td>
             <td><strong style="color:var(--success);">${c.revenue.toFixed(2)} €</strong></td>
-        </tr>
-    `).join('');
+        `;
+        
+        // Clic pour ouvrir l'historique
+        tr.querySelector('.client-name-link').addEventListener('click', () => openClientHistory(c.name));
+        
+        tbody.appendChild(tr);
+    });
 }
+
+const clientHistoryModal = document.getElementById('clientHistoryModal');
+function openClientHistory(clientName) {
+    document.getElementById('historyClientName').textContent = clientName;
+    const tbody = document.getElementById('clientHistoryTableBody');
+    
+    // On trouve les courses du client
+    const clientOrders = globalOrders.filter(o => (o.client_name || '').toLowerCase() === clientName.toLowerCase());
+    
+    // Tri décroissant pour avoir la dernière course en haut
+    clientOrders.sort((a, b) => {
+        return new Date((b.date||'2000-01-01')+'T'+(b.time||'00:00')) - new Date((a.date||'2000-01-01')+'T'+(a.time||'00:00'));
+    });
+
+    if (clientOrders.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:30px;">Aucune course trouvée.</td></tr>`;
+    } else {
+        tbody.innerHTML = clientOrders.map(o => {
+            let bClass = 'badge-attente'; let sLabel = 'En attente';
+            const st = (o.status||'').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+            if (st === 'charge') { bClass = 'badge-charge'; sLabel = 'Pris en charge'; } 
+            else if (st === 'depose' || st === 'deposee' || st === 'termine' || st === 'terminee') { bClass = 'badge-depose'; sLabel = 'Déposé'; }
+            
+            const dF = o.date ? new Date(o.date).toLocaleDateString('fr-FR', {day: '2-digit', month: '2-digit', year: 'numeric'}) : '--/--';
+            const v = allVehicles.find(x => x.id === o.vehicle_id);
+
+            return `<tr>
+                <td><strong>${dF}</strong> à ${o.time}</td>
+                <td><div style="font-size:12px; font-weight:500;"><i class="fa-solid fa-circle" style="color:var(--primary); font-size:8px;"></i> ${o.departure}</div><div style="font-size:12px; font-weight:500; margin-top:4px;"><i class="fa-solid fa-location-dot" style="color:var(--danger); font-size:9px;"></i> ${o.destination}</div></td>
+                <td><div style="font-weight:600;"><i class="fa-solid fa-user-tie" style="color:var(--primary);"></i> ${o.driver_name||'Non assigné'}</div><div style="font-size:11px; color:var(--text-muted); margin-top:3px;"><i class="fa-solid fa-car"></i> ${v?v.model:'<span style="color:red">Aucun</span>'}</div></td>
+                <td><strong style="color:var(--success);">${o.price} €</strong></td>
+                <td><span class="badge ${bClass}">${sLabel}</span></td>
+            </tr>`;
+        }).join('');
+    }
+    clientHistoryModal.style.display = 'flex';
+}
+function closeClientHistoryModal() { clientHistoryModal.style.display = 'none'; }
+
 
 // --- COURSES ---
 function generateMissionText(order) {
@@ -317,17 +374,28 @@ function renderOrdersTable() {
     const tbody = document.getElementById('ordersTableBody');
     if (!tbody) return;
 
-    // FILTRAGE ROBUSTE : On vérifie "depose", "déposé", "termine", "terminé" sans souci d'accent ni majuscule
+    const searchVal = (document.getElementById('searchOrderInput')?.value || '').toLowerCase();
+
+    // FILTRAGE ROBUSTE ET RECHERCHE
     const orders = globalOrders.filter(o => {
         const st = (o.status || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
         const isFinished = (st === 'depose' || st === 'deposee' || st === 'termine' || st === 'terminee');
-        if (currentAdminOrderFilter === 'history') return isFinished;
-        if (currentAdminOrderFilter === 'active') return !isFinished;
-        return true; 
+        
+        let tabMatch = true;
+        if (currentAdminOrderFilter === 'history') tabMatch = isFinished;
+        if (currentAdminOrderFilter === 'active') tabMatch = !isFinished;
+
+        let searchMatch = true;
+        if (searchVal) {
+            const clientName = (o.client_name || '').toLowerCase();
+            searchMatch = clientName.includes(searchVal);
+        }
+
+        return tabMatch && searchMatch;
     });
 
     if (orders.length === 0) { 
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:40px;">Aucune course dans cet onglet.</td></tr>`; 
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:40px;">Aucune course trouvée.</td></tr>`; 
         return; 
     }
 
@@ -356,7 +424,6 @@ function renderOrdersTable() {
             </td>
         `;
 
-        // ATTACHE ROBUSTE DES ÉVÉNEMENTS SUR LES BOUTONS (Évite le bug des apostrophes dans le HTML)
         tr.querySelector('.action-share').addEventListener('click', () => shareMissionFromAdmin(o));
         tr.querySelector('.action-edit').addEventListener('click', () => openEditModal(o));
         tr.querySelector('.action-delete').addEventListener('click', () => deleteOrder(o.id));
@@ -399,6 +466,7 @@ window.onclick = e => {
     if (e.target == editModal) closeEditModal(); 
     if (e.target == editDriverModal) closeEditDriverModal(); 
     if (e.target == planningModal) closePlanningModal();
+    if (e.target == clientHistoryModal) closeClientHistoryModal(); // Ajout pour fermer le nouveau modal d'historique
 }
 
 document.getElementById('editOrderForm')?.addEventListener('submit', async e => {
