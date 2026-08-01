@@ -98,7 +98,7 @@
         .modal-content { background-color: var(--card-bg); border-radius: var(--radius); width: 100%; max-width: 650px; padding: 30px; position: relative; max-height: 90vh; overflow-y: auto; }
         .modal-close { position: absolute; top: 20px; right: 20px; font-size: 24px; cursor: pointer; color: var(--text-muted); }
 
-        /* NOUVEAU : STYLE FILTRES ONGLETS ADMIN */
+        /* STYLE FILTRES ONGLETS ADMIN */
         .admin-filter-bar { display: flex; gap: 8px; margin: 16px 24px 0; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
         .admin-filter-btn { padding: 8px 14px; border: 1px solid var(--border); background: #f8fafc; border-radius: 6px; font-size: 13px; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: all 0.2s; }
         .admin-filter-btn:hover { background: #f1f5f9; }
@@ -186,7 +186,12 @@
                 <div class="card" style="padding: 0; overflow: hidden;">
                     <div class="card-title" style="margin: 24px 24px 0;"><i class="fa-solid fa-list" style="color: var(--text-main);"></i> Suivi des Missions</div>
                     
-                    <!-- NOUVEAU : BOUTONS DE FILTRE ONGLETS ADMIN -->
+                    <!-- NOUVEAU : RECHERCHE COURSES -->
+                    <div style="padding: 16px 24px 0;">
+                        <input type="text" id="searchOrderInput" placeholder="Rechercher une course (Nom du client)..." style="width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;" oninput="renderOrdersTable()">
+                    </div>
+
+                    <!-- BOUTONS DE FILTRE ONGLETS ADMIN -->
                     <div class="admin-filter-bar">
                         <button id="filterActiveBtn" class="admin-filter-btn active" onclick="switchAdminOrderFilter('active')"><i class="fa-solid fa-list"></i> À venir / En cours</button>
                         <button id="filterHistoryBtn" class="admin-filter-btn" onclick="switchAdminOrderFilter('history')"><i class="fa-solid fa-clock-rotate-left"></i> Anciennes courses</button>
@@ -263,8 +268,14 @@
                     <i class="fa-solid fa-address-book" style="color: var(--primary);"></i> Carnet d'Adresses Automatique
                 </div>
                 <div style="padding: 0 24px; font-size: 13px; color: var(--text-muted); margin-bottom: 10px;">
-                    Cette liste est générée automatiquement à partir de l'historique des commandes.
+                    Cette liste est générée automatiquement à partir de l'historique des commandes. Cliquez sur le nom d'un client pour voir son historique.
                 </div>
+
+                <!-- NOUVEAU : RECHERCHE CLIENTS -->
+                <div style="padding: 0 24px 16px;">
+                    <input type="text" id="searchClientInput" placeholder="Rechercher un client (Nom ou téléphone)..." style="width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;" oninput="renderClientsList()">
+                </div>
+
                 <div class="table-container" style="border: none; border-radius: 0;">
                     <table>
                         <thead>
@@ -337,6 +348,22 @@
                     <thead><tr><th>Date & Heure</th><th>Trajet</th><th>Statut</th></tr></thead>
                     <tbody id="planningTableBody">
                         <!-- Le planning s'affichera ici -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOUVEAU : MODAL HISTORIQUE CLIENT -->
+    <div id="clientHistoryModal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <span class="modal-close" onclick="closeClientHistoryModal()"><i class="fa-solid fa-xmark"></i></span>
+            <div class="card-title"><i class="fa-solid fa-clock-rotate-left" style="color: var(--primary);"></i> Historique de <span id="historyClientName" style="margin-left: 8px;"></span></div>
+            <div class="table-container" style="border: none; border-radius: 0; margin-top: 16px; max-height: 400px; overflow-y: auto;">
+                <table style="min-width: 600px;">
+                    <thead><tr><th>Date & Heure</th><th>Trajet</th><th>Chauffeur & Véhicule</th><th>Prix</th><th>Statut</th></tr></thead>
+                    <tbody id="clientHistoryTableBody">
+                        <!-- L'historique s'affichera ici -->
                     </tbody>
                 </table>
             </div>
