@@ -186,9 +186,9 @@
                 <div class="card" style="padding: 0; overflow: hidden;">
                     <div class="card-title" style="margin: 24px 24px 0;"><i class="fa-solid fa-list" style="color: var(--text-main);"></i> Suivi des Missions</div>
                     
-                    <!-- NOUVEAU : RECHERCHE COURSES -->
+                    <!-- RECHERCHE COURSES -->
                     <div style="padding: 16px 24px 0;">
-                        <input type="text" id="searchOrderInput" placeholder="Rechercher une course (Nom du client)..." style="width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;" oninput="renderOrdersTable()">
+                        <input type="text" id="searchOrderInput" placeholder="Rechercher une course (Nom du client)..." style="width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;">
                     </div>
 
                     <!-- BOUTONS DE FILTRE ONGLETS ADMIN -->
@@ -271,9 +271,9 @@
                     Cette liste est générée automatiquement à partir de l'historique des commandes. Cliquez sur le nom d'un client pour voir son historique.
                 </div>
 
-                <!-- NOUVEAU : RECHERCHE CLIENTS -->
+                <!-- RECHERCHE CLIENTS -->
                 <div style="padding: 0 24px 16px;">
-                    <input type="text" id="searchClientInput" placeholder="Rechercher un client (Nom ou téléphone)..." style="width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;" oninput="renderClientsList()">
+                    <input type="text" id="searchClientInput" placeholder="Rechercher un client (Nom ou téléphone)..." style="width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;">
                 </div>
 
                 <div class="table-container" style="border: none; border-radius: 0;">
@@ -354,10 +354,10 @@
         </div>
     </div>
 
-    <!-- NOUVEAU : MODAL HISTORIQUE CLIENT -->
+    <!-- MODAL HISTORIQUE CLIENT -->
     <div id="clientHistoryModal" class="modal">
         <div class="modal-content" style="max-width: 800px;">
-            <span class="modal-close" onclick="closeClientHistoryModal()"><i class="fa-solid fa-xmark"></i></span>
+            <span class="modal-close" onclick="document.getElementById('clientHistoryModal').style.display='none'"><i class="fa-solid fa-xmark"></i></span>
             <div class="card-title"><i class="fa-solid fa-clock-rotate-left" style="color: var(--primary);"></i> Historique de <span id="historyClientName" style="margin-left: 8px;"></span></div>
             <div class="table-container" style="border: none; border-radius: 0; margin-top: 16px; max-height: 400px; overflow-y: auto;">
                 <table style="min-width: 600px;">
