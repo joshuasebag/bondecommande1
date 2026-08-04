@@ -64,11 +64,27 @@
         
         .no-courses { text-align: center; color: var(--text-secondary); padding: 40px 20px; }
 
-        /* NOUVEAU : ONGLETS HISTORIQUE / À VENIR */
+        /* ONGLETS HISTORIQUE / À VENIR */
         .tabs-bar { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 20px; gap: 10px; }
         .tab-btn { flex: 1; padding: 12px; background: transparent; border: none; border-bottom: 3px solid transparent; font-size: 14px; font-weight: bold; color: var(--text-secondary); cursor: pointer; transition: all 0.2s; }
         .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
     </style>
+
+    <!-- CHARGEMENT DE SUPABASE ET CONFIGURATION DE LA PERSISTANCE -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.js"></script>
+    <script>
+        const SUPABASE_URL = 'VOTRE_SUPABASE_URL'; // Remplacez par votre URL Supabase
+        const SUPABASE_ANON_KEY = 'VOTRE_SUPABASE_ANON_KEY'; // Remplacez par votre clé Anón Supabase
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: {
+                persistSession: true,
+                autoRefreshToken: true,
+                detectSessionInUrl: true,
+                storage: window.localStorage
+            }
+        });
+    </script>
 </head>
 <body>
 
@@ -78,8 +94,8 @@
             <h2>Accès Chauffeur</h2>
             <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 14px;">Connectez-vous pour voir vos missions.</p>
             <form id="driverLoginForm">
-                <input type="text" id="loginName" placeholder="Identifiant (Nom)" required>
-                <input type="password" id="loginPassword" placeholder="Mot de passe" required>
+                <input type="text" id="loginName" placeholder="Identifiant (Nom)" required autocomplete="username">
+                <input type="password" id="loginPassword" placeholder="Mot de passe" required autocomplete="current-password">
                 <button type="submit">Se connecter</button>
             </form>
         </div>
@@ -95,7 +111,7 @@
             <h1>MitzvaDriver</h1>
         </header>
 
-        <!-- NOUVEAU : BARRE D'ONGLETS -->
+        <!-- BARRE D'ONGLETS -->
         <div class="tabs-bar">
             <button id="tabActiveBtn" class="tab-btn active" onclick="switchTab('active')"><i class="fa-solid fa-list"></i> À venir / En cours</button>
             <button id="tabHistoryBtn" class="tab-btn" onclick="switchTab('history')"><i class="fa-solid fa-clock-rotate-left"></i> Anciennes courses</button>
@@ -104,8 +120,7 @@
         <div id="coursesContainer"><div class="no-courses">Chargement...</div></div>
     </div>
 
-    <!-- Le script Supabase doit être chargé avant ton script JS -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.js"></script>
+    <!-- SCRIPT CHAUFFEUR PRINCIPAL -->
     <script src="chauffeur.js"></script>
 </body>
 </html>
