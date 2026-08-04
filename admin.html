@@ -1,9 +1,25 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <!-- SCRIPT DE SÉCURITÉ -->
+    <!-- SCRIPT DE SÉCURITÉ & PERSISTANCE SUPABASE -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.js"></script>
     <script>
+        // Initialisation globale avec persistance active
+        const SUPABASE_URL = 'VOTRE_SUPABASE_URL'; // Remplacez par votre URL
+        const SUPABASE_ANON_KEY = 'VOTRE_SUPABASE_ANON_KEY'; // Remplacez par votre clé Anón
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: {
+                persistSession: true,
+                autoRefreshToken: true,
+                detectSessionInUrl: true,
+                storage: window.localStorage
+            }
+        });
+
+        // Vérification de sécurité (vous pouvez l'adapter si vous utilisez Supabase Auth ou votre sessionStorage)
         if (sessionStorage.getItem('admin_connected') !== 'true') {
+            // Optionnel : si vous voulez lier la sécurité à Supabase Auth, vous pouvez vérifier supabase.auth.getSession()
+            // Pour l'instant on garde votre logique sessionStorage existante :
             window.location.href = 'login.html';
         }
     </script>
@@ -380,7 +396,6 @@
             element.classList.add('active');
         }
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.js"></script>
     <script src="admin.js"></script>
 </body>
 </html>
