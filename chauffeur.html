@@ -1,126 +1,111 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Chauffeur VTC</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        /* Thème clair MitzvaDriver */
-        :root { 
-            --primary: #2563eb; 
-            --bg: #f9f8f4; 
-            --card-bg: #ffffff; 
-            --text-primary: #1e293b; 
-            --text-secondary: #64748b; 
-            --border: #e2e8f0; 
-            --success: #10b981; 
-            --gold: #b38b59;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body { background-color: var(--bg); color: var(--text-primary); }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Chauffeur VTC</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Thème clair MitzvaDriver */
+        :root { 
+            --primary: #2563eb; 
+            --bg: #f9f8f4; 
+            --card-bg: #ffffff; 
+            --text-primary: #1e293b; 
+            --text-secondary: #64748b; 
+            --border: #e2e8f0; 
+            --success: #10b981; 
+            --gold: #b38b59;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background-color: var(--bg); color: var(--text-primary); }
 
-        /* Écran de Connexion */
-        #loginSection { height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
-        .login-card { background: var(--card-bg); padding: 30px 20px; border-radius: 16px; border: 1px solid var(--border); width: 100%; max-width: 400px; text-align: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-        .login-card h2 { margin-bottom: 20px; color: var(--text-primary); display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: bold; }
-        .login-card input { width: 100%; padding: 14px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--border); background: #f8fafc; color: var(--text-primary); font-size: 16px; outline: none; }
-        .login-card input:focus { border-color: var(--primary); }
-        .login-card button { width: 100%; padding: 14px; background: var(--text-primary); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: opacity 0.2s; }
-        .login-card button:active { opacity: 0.8; }
+        /* Écran de Connexion */
+        #loginSection { height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
+        .login-card { background: var(--card-bg); padding: 30px 20px; border-radius: 16px; border: 1px solid var(--border); width: 100%; max-width: 400px; text-align: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .login-card h2 { margin-bottom: 20px; color: var(--text-primary); display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: bold; }
+        .login-card input { width: 100%; padding: 14px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--border); background: #f8fafc; color: var(--text-primary); font-size: 16px; outline: none; }
+        .login-card input:focus { border-color: var(--primary); }
+        .login-card button { width: 100%; padding: 14px; background: var(--text-primary); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: opacity 0.2s; }
+        .login-card button:active { opacity: 0.8; }
 
-        /* Application Principale */
-        #appSection { display: none; padding: 15px; max-width: 600px; margin: 0 auto; }
-        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 12px; }
-        h1 { font-size: 24px; font-family: Georgia, serif; display: flex; align-items: center; gap: 10px; font-weight: normal; }
-        .driver-info-bar { font-size: 11px; font-weight: bold; color: var(--gold); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
-        
-        /* Design Carte MitzvaDriver */
-        .course-card { background: var(--card-bg); border: 1px solid #e5e7eb; border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-        
-        .shimon-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
-        .shimon-time { font-size: 32px; font-family: Georgia, serif; color: var(--text-primary); line-height: 1; margin-bottom: 4px; }
-        .shimon-date { font-size: 14px; color: var(--text-secondary); }
-        .shimon-price { font-size: 22px; font-family: Georgia, serif; color: var(--gold); text-align: right; margin-bottom: 6px; }
-        .shimon-badge { background: #f1f5f9; color: #64748b; padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: bold; text-transform: uppercase; display: inline-block; }
-        
-        .shimon-client { font-size: 18px; font-weight: bold; color: var(--text-primary); margin-bottom: 12px; }
-        
-        .shimon-addresses { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 14px; font-weight: 600; line-height: 1.4; }
-        .addr-block { flex: 1; border-bottom: 1px dashed #cbd5e1; padding-bottom: 2px; }
-        .addr-arrow { color: #cbd5e1; padding: 0 10px; font-size: 16px; }
-        
-        .shimon-details { font-size: 14px; color: var(--text-secondary); margin-bottom: 8px; display: flex; align-items: center; gap: 15px; }
-        .shimon-details i { color: #94a3b8; font-size: 14px; width: 16px; text-align: center; }
-        
-        .shimon-notes { font-size: 13px; color: var(--text-secondary); background: transparent; padding: 0; margin-top: 15px; margin-bottom: 20px; font-style: italic; line-height: 1.5; border-bottom: 1px dashed #cbd5e1; display: inline-block;}
-        
-        /* Boutons d'action */
-        .shimon-buttons { display: flex; flex-direction: column; gap: 8px; }
-        .btn-shimon { display: flex; justify-content: center; align-items: center; gap: 10px; width: 100%; padding: 14px; background-color: #fafafa; color: #334155; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 14px; font-weight: 600; text-decoration: none; cursor: pointer; }
-        .btn-shimon i { font-size: 16px; color: #94a3b8; }
-        
-        .btn-main-action { background-color: #f8f9fa; border: 1px solid #e2e8f0; color: #475569; border-radius: 10px; padding: 14px; font-weight: bold; font-size: 14px; width: 100%; cursor: pointer; text-align: center; }
-        
-        .no-courses { text-align: center; color: var(--text-secondary); padding: 40px 20px; }
+        /* Application Principale */
+        #appSection { display: none; padding: 15px; max-width: 600px; margin: 0 auto; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 12px; }
+        h1 { font-size: 24px; font-family: Georgia, serif; display: flex; align-items: center; gap: 10px; font-weight: normal; }
+        .driver-info-bar { font-size: 11px; font-weight: bold; color: var(--gold); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        
+        /* Design Carte MitzvaDriver */
+        .course-card { background: var(--card-bg); border: 1px solid #e5e7eb; border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        
+        .shimon-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
+        .shimon-time { font-size: 32px; font-family: Georgia, serif; color: var(--text-primary); line-height: 1; margin-bottom: 4px; }
+        .shimon-date { font-size: 14px; color: var(--text-secondary); }
+        .shimon-price { font-size: 22px; font-family: Georgia, serif; color: var(--gold); text-align: right; margin-bottom: 6px; }
+        .shimon-badge { background: #f1f5f9; color: #64748b; padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: bold; text-transform: uppercase; display: inline-block; }
+        
+        .shimon-client { font-size: 18px; font-weight: bold; color: var(--text-primary); margin-bottom: 12px; }
+        
+        .shimon-addresses { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 14px; font-weight: 600; line-height: 1.4; }
+        .addr-block { flex: 1; border-bottom: 1px dashed #cbd5e1; padding-bottom: 2px; }
+        .addr-arrow { color: #cbd5e1; padding: 0 10px; font-size: 16px; }
+        
+        .shimon-details { font-size: 14px; color: var(--text-secondary); margin-bottom: 8px; display: flex; align-items: center; gap: 15px; }
+        .shimon-details i { color: #94a3b8; font-size: 14px; width: 16px; text-align: center; }
+        
+        .shimon-notes { font-size: 13px; color: var(--text-secondary); background: transparent; padding: 0; margin-top: 15px; margin-bottom: 20px; font-style: italic; line-height: 1.5; border-bottom: 1px dashed #cbd5e1; display: inline-block;}
+        
+        /* Boutons d'action */
+        .shimon-buttons { display: flex; flex-direction: column; gap: 8px; }
+        .btn-shimon { display: flex; justify-content: center; align-items: center; gap: 10px; width: 100%; padding: 14px; background-color: #fafafa; color: #334155; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 14px; font-weight: 600; text-decoration: none; cursor: pointer; }
+        .btn-shimon i { font-size: 16px; color: #94a3b8; }
+        
+        .btn-main-action { background-color: #f8f9fa; border: 1px solid #e2e8f0; color: #475569; border-radius: 10px; padding: 14px; font-weight: bold; font-size: 14px; width: 100%; cursor: pointer; text-align: center; }
+        
+        .no-courses { text-align: center; color: var(--text-secondary); padding: 40px 20px; }
 
-        /* ONGLETS HISTORIQUE / À VENIR */
-        .tabs-bar { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 20px; gap: 10px; }
-        .tab-btn { flex: 1; padding: 12px; background: transparent; border: none; border-bottom: 3px solid transparent; font-size: 14px; font-weight: bold; color: var(--text-secondary); cursor: pointer; transition: all 0.2s; }
-        .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
-    </style>
-
-    <!-- CHARGEMENT DE SUPABASE ET CONFIGURATION DE LA PERSISTANCE -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.js"></script>
-    <script>
-        const SUPABASE_URL = 'VOTRE_SUPABASE_URL'; // Remplacez par votre URL Supabase
-        const SUPABASE_ANON_KEY = 'VOTRE_SUPABASE_ANON_KEY'; // Remplacez par votre clé Anón Supabase
-        
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-            auth: {
-                persistSession: true,
-                autoRefreshToken: true,
-                detectSessionInUrl: true,
-                storage: window.localStorage
-            }
-        });
-    </script>
+        /* NOUVEAU : ONGLETS HISTORIQUE / À VENIR */
+        .tabs-bar { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 20px; gap: 10px; }
+        .tab-btn { flex: 1; padding: 12px; background: transparent; border: none; border-bottom: 3px solid transparent; font-size: 14px; font-weight: bold; color: var(--text-secondary); cursor: pointer; transition: all 0.2s; }
+        .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+    </style>
 </head>
 <body>
 
-    <!-- SECTION CONNEXION -->
-    <div id="loginSection">
-        <div class="login-card">
-            <h2>Accès Chauffeur</h2>
-            <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 14px;">Connectez-vous pour voir vos missions.</p>
-            <form id="driverLoginForm">
-                <input type="text" id="loginName" placeholder="Identifiant (Nom)" required autocomplete="username">
-                <input type="password" id="loginPassword" placeholder="Mot de passe" required autocomplete="current-password">
-                <button type="submit">Se connecter</button>
-            </form>
-        </div>
-    </div>
+    <!-- SECTION CONNEXION -->
+    <div id="loginSection">
+        <div class="login-card">
+            <h2>Accès Chauffeur</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 14px;">Connectez-vous pour voir vos missions.</p>
+            <form id="driverLoginForm">
+                <input type="text" id="loginName" placeholder="Identifiant (Nom)" required>
+                <input type="password" id="loginPassword" placeholder="Mot de passe" required>
+                <button type="submit">Se connecter</button>
+            </form>
+        </div>
+    </div>
 
-    <!-- SECTION APPLICATION -->
-    <div id="appSection">
-        <div class="driver-info-bar">
-            <span>ESPACE OPÉRATEUR</span>
-            <button onclick="logoutDriver()" style="background:white; border:1px solid #e2e8f0; color:#334155; border-radius:6px; padding:6px 12px; font-weight:bold; cursor:pointer; font-size:11px;">Déconnexion</button>
-        </div>
-        <header>
-            <h1>MitzvaDriver</h1>
-        </header>
+    <!-- SECTION APPLICATION -->
+    <div id="appSection">
+        <div class="driver-info-bar">
+            <span>ESPACE OPÉRATEUR</span>
+            <button onclick="logoutDriver()" style="background:white; border:1px solid #e2e8f0; color:#334155; border-radius:6px; padding:6px 12px; font-weight:bold; cursor:pointer; font-size:11px;">Déconnexion</button>
+        </div>
+        <header>
+            <h1>MitzvaDriver</h1>
+        </header>
 
-        <!-- BARRE D'ONGLETS -->
-        <div class="tabs-bar">
-            <button id="tabActiveBtn" class="tab-btn active" onclick="switchTab('active')"><i class="fa-solid fa-list"></i> À venir / En cours</button>
-            <button id="tabHistoryBtn" class="tab-btn" onclick="switchTab('history')"><i class="fa-solid fa-clock-rotate-left"></i> Anciennes courses</button>
-        </div>
-        
-        <div id="coursesContainer"><div class="no-courses">Chargement...</div></div>
-    </div>
+        <!-- NOUVEAU : BARRE D'ONGLETS -->
+        <div class="tabs-bar">
+            <button id="tabActiveBtn" class="tab-btn active" onclick="switchTab('active')"><i class="fa-solid fa-list"></i> À venir / En cours</button>
+            <button id="tabHistoryBtn" class="tab-btn" onclick="switchTab('history')"><i class="fa-solid fa-clock-rotate-left"></i> Anciennes courses</button>
+        </div>
+        
+        <div id="coursesContainer"><div class="no-courses">Chargement...</div></div>
+    </div>
 
-    <!-- SCRIPT CHAUFFEUR PRINCIPAL -->
-    <script src="chauffeur.js"></script>
+    <!-- Le script Supabase doit être chargé avant ton script JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.js"></script>
+    <script src="chauffeur.js"></script>
 </body>
 </html>
